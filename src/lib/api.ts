@@ -24,7 +24,6 @@ export interface PassageMetadata {
 // Full question details (used for single question view)
 export interface Question {
   id: string;
-  question_id: string;
   question_type: string;
   difficulty_level: string;
   topic: string;
@@ -36,7 +35,7 @@ export interface Question {
 
 // Partial question (used for listing - text truncated to 150 chars)
 export interface PartialQuestion {
-  question_id: string;
+  id: string;
   question_type: string;
   difficulty_level: string;
   topic: string;
@@ -44,10 +43,22 @@ export interface PartialQuestion {
   created_at: string;
 }
 
+export interface PartialPassage {
+  id: string;
+  passage: string;
+  title: string;
+  difficulty: string;
+  question_ids: string[];
+  created_at: string;
+}
+
 export interface Passage {
   id: string;
   passage: string;
   source: string;
+  title: string;
+  difficulty: string;
+  type: string;
   question_ids: string[];
   metadata: PassageMetadata;
 }
@@ -61,7 +72,7 @@ export interface QuestionsResponse {
 }
 
 export interface PassagesResponse {
-  passages: Passage[];
+  passages: PartialPassage[];
   total: number;
   page: number;
   limit: number;
@@ -85,6 +96,26 @@ export interface User {
   };
   createdAt: string;
 }
+
+export interface UserQuestionProgress {
+  userId: string;
+  questionId: string;
+  solved: boolean;
+  attempted: boolean;
+  lastAttemptAt: string;
+  lastSolvedAt?: string;
+  timeTaken: number; // in seconds
+}
+
+export interface UserPassageProgress {
+  passageId: string;
+  solvedQuestionIds: string[];
+  totalQuestions: number;
+  solved: boolean;
+  attempted: boolean;
+}
+
+
 
 export interface LoginCredentials {
   identifier: string;
@@ -256,10 +287,14 @@ class ApiService {
   async getPassages(params?: {
     page?: number;
     limit?: number;
+    difficulty?: string;
+    new?: boolean;
   }): Promise<PassagesResponse> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.difficulty) queryParams.append('difficulty', params.difficulty);
+    if (params?.new) queryParams.append('new', 'true');
 
     const url = `/passages${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest<PassagesResponse>(url);
@@ -267,6 +302,209 @@ class ApiService {
 
   async getPassageById(id: string): Promise<Passage> {
     return this.makeRequest<Passage>(`/passages/${id}`);
+  }
+
+  // Smart mixed content aggregation - fills gaps when one type has fewer items
+  async getMixedPracticeContent(params?: {
+    page?: number;
+    limit?: number;
+    difficulty?: string;
+    new?: boolean;
+  }): Promise<{
+    passages: PartialPassage[];
+    questions: PartialQuestion[];
+    totalPages: number;
+  }> {
+    const limit = params?.limit || 20;
+    const page = params?.page || 1;
+    
+    // Start by trying to get ~1/3 from each type, but fetch more to handle gaps
+    const initialLimit = Math.ceil(limit / 3);
+    
+    const baseParams = {
+      page,
+      limit: initialLimit,
+      ...(params?.difficulty && { difficulty: params.difficulty }),
+      ...(params?.new && { new: params.new }),
+    };
+    
+    // Fetch all types in parallel
+    const [tcResponse, seResponse, passagesResponse] = await Promise.all([
+      this.getQuestions({ ...baseParams, type: 'text_completion' }),
+      this.getQuestions({ ...baseParams, type: 'sentence_equivalence' }),
+      this.getPassages(baseParams),
+    ]);
+    
+    // Collect initial items
+    let tcQuestions = tcResponse.questions || [];
+    let seQuestions = seResponse.questions || [];
+    let passages = passagesResponse.passages || [];
+    
+    let totalItems = tcQuestions.length + seQuestions.length + passages.length;
+    
+    // If we don't have enough items, fetch more from types that have them
+    if (totalItems < limit) {
+      const deficit = limit - totalItems;
+      
+      // Try to fill from types that might have more (those that returned full initial limit)
+      const additionalFetches = [];
+      
+      if (tcQuestions.length === initialLimit) {
+        additionalFetches.push(
+          this.getQuestions({ 
+            ...baseParams, 
+            type: 'text_completion', 
+            limit: deficit 
+          }).then(res => ({ type: 'tc', data: res.questions || [] }))
+        );
+      }
+      
+      if (seQuestions.length === initialLimit) {
+        additionalFetches.push(
+          this.getQuestions({ 
+            ...baseParams, 
+            type: 'sentence_equivalence', 
+            limit: deficit 
+          }).then(res => ({ type: 'se', data: res.questions || [] }))
+        );
+      }
+      
+      if (passages.length === initialLimit) {
+        additionalFetches.push(
+          this.getPassages({ 
+            ...baseParams, 
+            limit: deficit 
+          }).then(res => ({ type: 'passages', data: res.passages || [] }))
+        );
+      }
+      
+      // Fetch additional items
+      if (additionalFetches.length > 0) {
+        const additionalResults = await Promise.all(additionalFetches);
+        
+        // Add additional items until we reach the limit
+        for (const result of additionalResults) {
+          const remaining = limit - totalItems;
+          if (remaining <= 0) break;
+          
+          if (result.type === 'tc') {
+            const toAdd = (result.data as PartialQuestion[]).slice(0, remaining);
+            tcQuestions = [...tcQuestions, ...toAdd];
+            totalItems += toAdd.length;
+          } else if (result.type === 'se') {
+            const toAdd = (result.data as PartialQuestion[]).slice(0, remaining);
+            seQuestions = [...seQuestions, ...toAdd];
+            totalItems += toAdd.length;
+          } else if (result.type === 'passages') {
+            const toAdd = (result.data as PartialPassage[]).slice(0, remaining);
+            passages = [...passages, ...toAdd];
+            totalItems += toAdd.length;
+          }
+        }
+      }
+    }
+    
+    // Combine all items with timestamps for sorting
+    type ItemWithTimestamp = (PartialQuestion | PartialPassage) & { created_at: string };
+    const allItems: ItemWithTimestamp[] = [
+      ...tcQuestions,
+      ...seQuestions,
+      ...passages
+    ];
+    
+    // Sort by created_at (newest first)
+    allItems.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
+    
+    // Limit to exactly the requested number of items
+    const limitedItems = allItems.slice(0, limit);
+    
+    // Separate back into passages and questions while maintaining sorted order
+    const sortedPassages: PartialPassage[] = [];
+    const sortedQuestions: PartialQuestion[] = [];
+    
+    limitedItems.forEach(item => {
+      if ('question_ids' in item) {
+        sortedPassages.push(item as PartialPassage);
+      } else {
+        sortedQuestions.push(item as PartialQuestion);
+      }
+    });
+    
+    // Calculate total pages based on maximum from all responses
+    const maxPages = Math.max(
+      tcResponse.totalPages || 1,
+      seResponse.totalPages || 1,
+      passagesResponse.totalPages || 1
+    );
+    
+    return {
+      passages: sortedPassages,
+      questions: sortedQuestions,
+      totalPages: maxPages,
+    };
+  }
+
+  // User question progress methods
+  async submitQuestionAttempt(
+    questionId: string, 
+    solved: boolean, 
+    timeTaken: number
+  ): Promise<UserQuestionProgress> {
+    return this.makeRequest<UserQuestionProgress>(`/user/questions/${questionId}/attempt`, {
+      method: 'POST',
+      body: JSON.stringify({ solved, time_taken: timeTaken }),
+    });
+  }
+
+  async submitPassageAttempt(
+    passageId: string,
+    questionId: string,
+    solved: boolean,
+    timeTaken: number
+  ): Promise<{ question: UserQuestionProgress; passage: UserPassageProgress }> {
+    return this.makeRequest<{ question: UserQuestionProgress; passage: UserPassageProgress }>(
+      `/user/passages/${passageId}/attempt`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ question_id: questionId, solved, time_taken: timeTaken }),
+      }
+    );
+  }
+
+  async getQuestionProgress(questionId: string): Promise<UserQuestionProgress | null> {
+    try {
+      return await this.makeRequest<UserQuestionProgress>(`/user/questions/${questionId}/progress`);
+    } catch {
+      // Return null if progress not found
+      return null;
+    }
+  }
+
+  async getPassageProgress(passageId: string): Promise<UserPassageProgress | null> {
+    try {
+      return await this.makeRequest<UserPassageProgress>(`/user/passages/${passageId}/progress`);
+    } catch {
+      // Return null if progress not found
+      return null;
+    }
+  }
+
+  async getBulkQuestionProgress(questionIds: string[]): Promise<Record<string, UserQuestionProgress>> {
+    return this.makeRequest<Record<string, UserQuestionProgress>>('/user/questions/progress/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ question_ids: questionIds }),
+    });
+  }
+
+  async getBulkPassageProgress(passageIds: string[]): Promise<Record<string, UserPassageProgress>> {
+    return this.makeRequest<Record<string, UserPassageProgress>>('/user/passages/progress/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ passage_ids: passageIds }),
+    });
   }
 
   // File upload method

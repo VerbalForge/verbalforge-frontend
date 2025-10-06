@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { apiService, Question } from '@/lib/api';
+import { apiService, Question, Passage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { SentenceEquivalenceQuestion } from '@/components/questions/SentenceEquivalenceQuestion';
@@ -18,23 +18,63 @@ export default function QuestionDetailPage() {
   const username = params.username as string;
 
   const [question, setQuestion] = useState<Question | null>(null);
+  const [passage, setPassage] = useState<Passage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [questionIds, setQuestionIds] = useState<string[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [navigationItems, setNavigationItems] = useState<Array<{
+    type: 'passage' | 'question';
+    id: string;
+    questionIds: string[];
+  }>>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
+  const [currentItemIndex, setCurrentItemIndex] = useState(-1);
+  const [currentPassageId, setCurrentPassageId] = useState<string | null>(null);
 
+  // Main effect: Load navigation state and fetch question when questionId changes
+  // Note: In development with React Strict Mode, this will run twice - this is intentional
   useEffect(() => {
-    // Get question IDs from sessionStorage
-    const storedIds = sessionStorage.getItem('questionIds');
-    if (storedIds) {
-      const ids = JSON.parse(storedIds);
-      setQuestionIds(ids);
-      setCurrentIndex(ids.indexOf(questionId));
-    }
-  }, [questionId]);
-
-  useEffect(() => {
-    const fetchQuestion = async () => {
+    const loadDataAndNavigation = async () => {
+      setLoading(true);
+      setError(null);
+      
+      // Load navigation items from session storage
+      const storedItems = sessionStorage.getItem('navigationItems');
+      const storedPassageId = sessionStorage.getItem('currentPassageId');
+      
+      if (storedItems) {
+        const items = JSON.parse(storedItems) as Array<{
+          type: 'passage' | 'question';
+          id: string;
+          questionIds: string[];
+        }>;
+        setNavigationItems(items);
+        
+        // Only update currentPassageId if it actually changed to avoid unnecessary passage fetch
+        setCurrentPassageId(prev => {
+          if (prev !== storedPassageId) {
+            return storedPassageId;
+          }
+          return prev;
+        });
+        
+        // Find current item and question index
+        if (storedPassageId) {
+          // We're in a passage
+          const itemIndex = items.findIndex(item => item.type === 'passage' && item.id === storedPassageId);
+          setCurrentItemIndex(itemIndex);
+          if (itemIndex >= 0) {
+            const questionIndex = items[itemIndex].questionIds.indexOf(questionId);
+            setCurrentQuestionIndex(questionIndex);
+          }
+        } else {
+          // We're in a standalone question
+          const itemIndex = items.findIndex(item => item.type === 'question' && item.id === questionId);
+          setCurrentItemIndex(itemIndex);
+          setCurrentQuestionIndex(0);
+        }
+      }
+      
+      // Fetch question data
       try {
         const data = await apiService.getQuestionById(questionId);
         setQuestion(data);
@@ -46,25 +86,124 @@ export default function QuestionDetailPage() {
       }
     };
 
-    fetchQuestion();
+    loadDataAndNavigation();
   }, [questionId]);
 
+  // Separate effect: Fetch passage only when passage ID changes
+  // Note: In development with React Strict Mode, this will run twice - this is intentional
+  useEffect(() => {
+    if (!currentPassageId) {
+      setPassage(null);
+      return;
+    }
+
+    const fetchPassage = async () => {
+      try {
+        const passageData = await apiService.getPassageById(currentPassageId);
+        setPassage(passageData);
+      } catch (passageErr) {
+        console.error('Error fetching passage:', passageErr);
+        setPassage(null);
+      }
+    };
+
+    fetchPassage();
+  }, [currentPassageId]);
+
   const handleNext = () => {
-    if (currentIndex >= 0 && currentIndex < questionIds.length - 1) {
-      const nextId = questionIds[currentIndex + 1];
-      router.push(`/${username}/practice/${nextId}`);
+    if (currentItemIndex < 0 || navigationItems.length === 0) return;
+    
+    const currentItem = navigationItems[currentItemIndex];
+    
+    // Check if there's a next question in the current item (passage or question)
+    if (currentQuestionIndex < currentItem.questionIds.length - 1) {
+      // Move to next question in same item
+      const nextQuestionId = currentItem.questionIds[currentQuestionIndex + 1];
+      sessionStorage.setItem('currentQuestionId', nextQuestionId);
+      router.push(`/${username}/practice/${nextQuestionId}`);
+    } else if (currentItemIndex < navigationItems.length - 1) {
+      // Move to next item (passage or question)
+      const nextItem = navigationItems[currentItemIndex + 1];
+      const nextQuestionId = nextItem.questionIds[0];
+      
+      if (nextItem.type === 'passage') {
+        sessionStorage.setItem('currentPassageId', nextItem.id);
+      } else {
+        sessionStorage.removeItem('currentPassageId');
+      }
+      sessionStorage.setItem('currentQuestionId', nextQuestionId);
+      router.push(`/${username}/practice/${nextQuestionId}`);
     }
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      const prevId = questionIds[currentIndex - 1];
-      router.push(`/${username}/practice/${prevId}`);
+    if (currentItemIndex < 0 || navigationItems.length === 0) return;
+    
+    const currentItem = navigationItems[currentItemIndex];
+    
+    // Check if there's a previous question in the current item
+    if (currentQuestionIndex > 0) {
+      // Move to previous question in same item
+      const prevQuestionId = currentItem.questionIds[currentQuestionIndex - 1];
+      sessionStorage.setItem('currentQuestionId', prevQuestionId);
+      router.push(`/${username}/practice/${prevQuestionId}`);
+    } else if (currentItemIndex > 0) {
+      // Move to previous item's last question
+      const prevItem = navigationItems[currentItemIndex - 1];
+      const prevQuestionId = prevItem.questionIds[prevItem.questionIds.length - 1];
+      
+      if (prevItem.type === 'passage') {
+        sessionStorage.setItem('currentPassageId', prevItem.id);
+      } else {
+        sessionStorage.removeItem('currentPassageId');
+      }
+      sessionStorage.setItem('currentQuestionId', prevQuestionId);
+      router.push(`/${username}/practice/${prevQuestionId}`);
     }
   };
 
-  const hasNext = currentIndex >= 0 && currentIndex < questionIds.length - 1;
-  const hasPrev = currentIndex > 0;
+  const hasNext = () => {
+    if (currentItemIndex < 0 || navigationItems.length === 0) return false;
+    const currentItem = navigationItems[currentItemIndex];
+    // Has next if there's another question in current item OR another item exists
+    return currentQuestionIndex < currentItem.questionIds.length - 1 || currentItemIndex < navigationItems.length - 1;
+  };
+
+  const hasPrev = () => {
+    if (currentItemIndex < 0 || navigationItems.length === 0) return false;
+    // Has prev if there's a previous question in current item OR a previous item exists
+    return currentQuestionIndex > 0 || currentItemIndex > 0;
+  };
+  
+  const hasNextValue = hasNext();
+  const hasPrevValue = hasPrev();
+
+  // Handle back to practice list - clear session storage
+  const handleBackToPractice = () => {
+    sessionStorage.removeItem('navigationItems');
+    sessionStorage.removeItem('currentPassageId');
+    sessionStorage.removeItem('currentQuestionId');
+    router.push(`/${username}/practice`);
+  };
+
+  // Get friendly question type name
+  const getQuestionTypeName = (type: string) => {
+    const typeLower = type.toLowerCase();
+    if (typeLower.includes('reading_comprehension')) return 'Reading Comprehension';
+    if (typeLower.includes('sentence_equivalence')) return 'Sentence Equivalence';
+    if (typeLower.includes('text_completion')) return 'Text Completion';
+    return 'Question';
+  };
+
+  // Get subtitle - use passage title for RC questions, topic for others
+  const getSubtitle = () => {
+    if (!question) return '';
+    const isRC = question.question_type.toLowerCase().includes('reading_comprehension');
+    if (isRC && passage?.title) {
+      return passage.title;
+    }
+    return question.topic;
+  };
 
   if (loading) {
     return (
@@ -78,7 +217,7 @@ export default function QuestionDetailPage() {
     return (
       <div className="text-center py-12">
         <p className="text-destructive mb-4">{error || 'Question not found'}</p>
-        <Button onClick={() => router.push(`/${username}/practice`)}>
+        <Button onClick={handleBackToPractice}>
           Back to Practice
         </Button>
       </div>
@@ -91,11 +230,13 @@ export default function QuestionDetailPage() {
     if (questionType.includes('reading_comprehension')) {
       return (
         <ReadingComprehensionQuestion 
-          question={question} 
+          question={question}
+          passage={passage}
+          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
-          hasNext={hasNext}
-          hasPrev={hasPrev}
+          hasNext={hasNextValue}
+          hasPrev={hasPrevValue}
         />
       );
     }
@@ -103,11 +244,12 @@ export default function QuestionDetailPage() {
     if (questionType.includes('sentence_equivalence')) {
       return (
         <SentenceEquivalenceQuestion 
-          question={question} 
+          question={question}
+          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
-          hasNext={hasNext}
-          hasPrev={hasPrev}
+          hasNext={hasNextValue}
+          hasPrev={hasPrevValue}
         />
       );
     }
@@ -115,11 +257,12 @@ export default function QuestionDetailPage() {
     if (questionType.includes('text_completion_single')) {
       return (
         <TextCompletionQuestion 
-          question={question} 
+          question={question}
+          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
-          hasNext={hasNext}
-          hasPrev={hasPrev}
+          hasNext={hasNextValue}
+          hasPrev={hasPrevValue}
         />
       );
     }
@@ -127,11 +270,12 @@ export default function QuestionDetailPage() {
     if (questionType.includes('text_completion_double')) {
       return (
         <TextCompletionDoubleQuestion 
-          question={question} 
+          question={question}
+          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
-          hasNext={hasNext}
-          hasPrev={hasPrev}
+          hasNext={hasNextValue}
+          hasPrev={hasPrevValue}
         />
       );
     }
@@ -139,11 +283,12 @@ export default function QuestionDetailPage() {
     if (questionType.includes('text_completion_triple')) {
       return (
         <TextCompletionTripleQuestion 
-          question={question} 
+          question={question}
+          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
-          hasNext={hasNext}
-          hasPrev={hasPrev}
+          hasNext={hasNextValue}
+          hasPrev={hasPrevValue}
         />
       );
     }
@@ -164,13 +309,13 @@ export default function QuestionDetailPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push(`/${username}/practice`)}
+          onClick={handleBackToPractice}
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-lg font-semibold">Question</h1>
-          <p className="text-xs text-muted-foreground">{question.topic}</p>
+          <h1 className="text-lg font-semibold">{getQuestionTypeName(question.question_type)}</h1>
+          <p className="text-xs text-muted-foreground">{getSubtitle()}</p>
         </div>
       </div>
 

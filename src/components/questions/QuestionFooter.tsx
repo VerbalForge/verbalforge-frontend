@@ -40,7 +40,7 @@ export function QuestionFooter({
   className = '',
 }: QuestionFooterProps) {
   return (
-    <div className={`flex justify-between gap-2 ${className}`}>
+    <div className={`flex justify-between gap-2 pt-2.5 border-t ${className}`}>
       <div className="flex gap-2">
         {onClear && (
           <Button 

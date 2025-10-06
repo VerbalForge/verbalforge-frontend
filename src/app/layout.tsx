@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VerbalForge - Communication Platform",
+  title: "VerbalForge",
   description: "A comprehensive platform for verbal communication and collaboration",
 };
 

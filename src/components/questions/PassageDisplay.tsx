@@ -1,16 +1,30 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Passage } from '@/lib/api';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, List, AlignLeft } from 'lucide-react';
 
 interface PassageDisplayProps {
   passage: Passage | null;
-  loading: boolean;
-  error: string | null;
-  isHighlight?: boolean;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export function PassageDisplay({ passage, loading, error, isHighlight = false }: PassageDisplayProps) {
+export function PassageDisplay({ passage, loading = false, error = null }: PassageDisplayProps) {
+  // Load initial view mode from sessionStorage, default to 'paragraph'
+  const [viewMode, setViewMode] = useState<'numbered' | 'paragraph'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('passageViewMode');
+      return (stored === 'numbered' || stored === 'paragraph') ? stored : 'paragraph';
+    }
+    return 'paragraph';
+  });
+
+  // Save view mode preference to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('passageViewMode', viewMode);
+  }, [viewMode]);
+
   if (loading) {
     return (
       <div className="flex-1 border rounded-md p-4 flex items-center justify-center bg-muted/30">
@@ -22,13 +36,13 @@ export function PassageDisplay({ passage, loading, error, isHighlight = false }:
     );
   }
 
-  if (error || !passage) {
+  if (error) {
     return (
       <div className="flex-1 border border-red-200 rounded-md p-4 flex items-center justify-center bg-red-50 dark:bg-red-900/10">
         <div className="flex flex-col items-center gap-2 text-center max-w-md">
           <AlertCircle className="w-6 h-6 text-red-600" />
           <p className="text-sm text-red-900 dark:text-red-300 font-medium">
-            {error || 'Failed to load passage'}
+            {error}
           </p>
           {error?.includes('schema') && (
             <p className="text-xs text-red-700 dark:text-red-400 mt-1">
@@ -40,47 +54,97 @@ export function PassageDisplay({ passage, loading, error, isHighlight = false }:
     );
   }
 
+  // If no passage yet (but no error), show a neutral loading state
+  if (!passage) {
+    return (
+      <div className="flex-1 border rounded-md p-4 flex items-center justify-center bg-muted/30">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading passage...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Split passage into sentences if it's a highlight question
   const renderPassageContent = () => {
-    if (isHighlight && passage.passage) {
-      // Split by sentence markers [1], [2], etc.
-      const parts = passage.passage.split(/(\[\d+\])/);
-      const sentences: { number: string; text: string }[] = [];
-      
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i].trim();
-        if (part.match(/^\[\d+\]$/)) {
-          const number = part;
-          const text = parts[i + 1]?.trim() || '';
-          if (text) {
-            sentences.push({ number, text });
-            i++; // Skip the next part as we've already used it
-          }
-        }
-      }
+    if (!passage.passage) return null;
 
-      if (sentences.length > 0) {
-        return (
-          <div className="space-y-3">
-            {sentences.map((sentence, index) => (
-              <div key={index} className="flex gap-2">
-                <span className="text-xs font-semibold text-primary flex-shrink-0 mt-0.5">
-                  {sentence.number}
-                </span>
-                <p className="text-sm leading-relaxed">{sentence.text}</p>
-              </div>
-            ))}
-          </div>
-        );
+    // Split by sentence markers [1], [2], etc.
+    const parts = passage.passage.split(/(\[\d+\])/);
+    const sentences: { number: string; text: string }[] = [];
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i].trim();
+      if (part.match(/^\[\d+\]$/)) {
+        const number = part;
+        const text = parts[i + 1]?.trim() || '';
+        if (text) {
+          sentences.push({ number, text });
+          i++; // Skip the next part as we've already used it
+        }
       }
     }
 
-    // Regular passage display
-    return <p className="text-sm leading-relaxed whitespace-pre-wrap">{passage.passage}</p>;
+    // If no numbered sentences found, render as regular text
+    if (sentences.length === 0) {
+      return <p className="text-sm leading-relaxed whitespace-pre-wrap">{passage.passage}</p>;
+    }
+
+    // Numbered view - show sentences with numbers
+    if (viewMode === 'numbered') {
+      return (
+        <div className="space-y-3">
+          {sentences.map((sentence, index) => (
+            <div key={index} className="flex gap-2">
+              <span className="text-xs font-semibold text-primary flex-shrink-0 mt-0.5">
+                {sentence.number}
+              </span>
+              <p className="text-sm leading-relaxed">{sentence.text}</p>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Paragraph view - strip out the numbers and show as continuous text
+    const paragraphText = sentences.map(s => s.text).join(' ');
+    return <p className="text-sm leading-relaxed">{paragraphText}</p>;
   };
 
   return (
     <div className="flex-1 border rounded-md overflow-hidden flex flex-col bg-background">
+      {/* Toggle buttons */}
+      <div className="border-b bg-muted/30 px-4 py-2 flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">Passage</p>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setViewMode('numbered')}
+            className={`px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5 ${
+              viewMode === 'numbered'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-background hover:bg-muted text-muted-foreground'
+            }`}
+            title="Numbered view"
+          >
+            <List className="w-3 h-3" />
+            Numbered
+          </button>
+          <button
+            onClick={() => setViewMode('paragraph')}
+            className={`px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5 ${
+              viewMode === 'paragraph'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-background hover:bg-muted text-muted-foreground'
+            }`}
+            title="Paragraph view"
+          >
+            <AlignLeft className="w-3 h-3" />
+            Paragraph
+          </button>
+        </div>
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-3">
           {renderPassageContent()}

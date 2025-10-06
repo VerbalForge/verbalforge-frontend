@@ -58,7 +58,6 @@ export function Sidebar({
         <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
           VerbalForge
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Communication Platform</p>
       </div>
 
       <Separator />
