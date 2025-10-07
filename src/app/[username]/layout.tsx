@@ -107,6 +107,9 @@ export default function UsernameLayout({
     pathname === item.path || pathname.startsWith(item.path + '/')
   );
 
+  // Check if we're on the Practice page
+  const isPracticePage = pathname === `/${username}/practice` || pathname.startsWith(`/${username}/practice/`);
+
   return (
     <ProtectedRoute>
       <SidebarProvider>
@@ -181,7 +184,7 @@ export default function UsernameLayout({
           <main className="flex-1">
             <div className="sticky top-0 z-10 bg-background border-b">
               <div className="flex items-center h-16 px-6 gap-4">
-                <SidebarTrigger />
+                {isPracticePage && <SidebarTrigger />}
                 <div className="flex-1">
                   <h1 className="text-xl font-semibold">
                     {currentPage?.name || 'VerbalForge'}

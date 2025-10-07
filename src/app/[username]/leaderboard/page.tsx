@@ -1,319 +1,190 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-
-// Sample leaderboard data
-const leaderboardData = [
-  {
-    rank: 1,
-    name: 'Sarah Johnson',
-    initials: 'SJ',
-    points: 2847,
-    streak: 23,
-    practices: 156,
-    level: 8,
-    change: 'up',
-  },
-  {
-    rank: 2,
-    name: 'Michael Chen',
-    initials: 'MC',
-    points: 2654,
-    streak: 18,
-    practices: 142,
-    level: 7,
-    change: 'same',
-  },
-  {
-    rank: 3,
-    name: 'Emily Rodriguez',
-    initials: 'ER',
-    points: 2501,
-    streak: 15,
-    practices: 138,
-    level: 7,
-    change: 'up',
-  },
-  {
-    rank: 4,
-    name: 'David Kim',
-    initials: 'DK',
-    points: 2389,
-    streak: 21,
-    practices: 125,
-    level: 7,
-    change: 'down',
-  },
-  {
-    rank: 5,
-    name: 'Lisa Wang',
-    initials: 'LW',
-    points: 2276,
-    streak: 12,
-    practices: 119,
-    level: 6,
-    change: 'up',
-  },
-  {
-    rank: 6,
-    name: 'James Wilson',
-    initials: 'JW',
-    points: 2145,
-    streak: 9,
-    practices: 108,
-    level: 6,
-    change: 'same',
-  },
-  {
-    rank: 7,
-    name: 'Anna Martinez',
-    initials: 'AM',
-    points: 2034,
-    streak: 14,
-    practices: 102,
-    level: 6,
-    change: 'up',
-  },
-  {
-    rank: 8,
-    name: 'Robert Taylor',
-    initials: 'RT',
-    points: 1923,
-    streak: 7,
-    practices: 95,
-    level: 5,
-    change: 'down',
-  },
-  {
-    rank: 9,
-    name: 'Jennifer Lee',
-    initials: 'JL',
-    points: 1867,
-    streak: 11,
-    practices: 89,
-    level: 5,
-    change: 'up',
-  },
-  {
-    rank: 10,
-    name: 'Christopher Brown',
-    initials: 'CB',
-    points: 1756,
-    streak: 6,
-    practices: 84,
-    level: 5,
-    change: 'same',
-  },
-];
-
-const topPerformers = [
-  { title: 'Longest Streak', name: 'Sarah Johnson', value: '23 days', icon: '🔥' },
-  { title: 'Most Practices', name: 'Sarah Johnson', value: '156 sessions', icon: '🎯' },
-  { title: 'Highest Level', name: 'Sarah Johnson', value: 'Level 8', icon: '⭐' },
-  { title: 'Most Active Today', name: 'Emily Rodriguez', value: '8 practices', icon: '⚡' },
-];
-
-const getRankColor = (rank: number) => {
-  if (rank === 1) return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-  if (rank === 2) return 'bg-muted border-border text-foreground';
-  if (rank === 3) return 'bg-orange-100 border-orange-300 text-orange-800';
-  return 'bg-blue-50 border-blue-200 text-blue-800';
-};
+import { Skeleton } from '@/components/ui/skeleton';
+import { Trophy, Medal } from 'lucide-react';
+import { apiService, LeaderboardEntry } from '@/lib/api';
+import { getInitials, getRankName, getRankColor } from '@/lib/utils/profile';
 
 const getRankIcon = (rank: number) => {
   if (rank === 1) return '🥇';
   if (rank === 2) return '🥈';
   if (rank === 3) return '🥉';
-  return rank;
+  return null;
 };
 
-const getChangeIcon = (change: string) => {
-  if (change === 'up') return <TrendingUp className="w-4 h-4 text-green-600" />;
-  if (change === 'down') return <TrendingDown className="w-4 h-4 text-red-600" />;
-  return <Minus className="w-4 h-4 text-muted-foreground" />;
+const getRankBadgeColor = (rank: number) => {
+  if (rank === 1) return 'bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300';
+  if (rank === 2) return 'bg-gray-100 border-gray-300 text-gray-800 dark:bg-gray-900/20 dark:border-gray-700 dark:text-gray-300';
+  if (rank === 3) return 'bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/20 dark:border-orange-700 dark:text-orange-300';
+  return 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300';
 };
 
 export default function LeaderboardPage() {
-  const [timeFilter, setTimeFilter] = useState('all');
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await apiService.getLeaderboard(100);
+        setLeaderboard(data.leaderboard);
+      } catch (err) {
+        console.error('Error fetching leaderboard:', err);
+        setError('Failed to load leaderboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-12 w-64" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[...Array(10)].map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6">
+        <p className="text-center text-muted-foreground">{error}</p>
+      </Card>
+    );
+  }
+
+  const topThree = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex items-center gap-3">
+        <Trophy className="w-8 h-8 text-yellow-500" />
         <div>
           <h1 className="text-3xl font-bold">Leaderboard</h1>
-          <p className="text-muted-foreground mt-2">
-            See how you rank against other learners
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={timeFilter === 'today' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTimeFilter('today')}
-          >
-            Today
-          </Button>
-          <Button
-            variant={timeFilter === 'week' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTimeFilter('week')}
-          >
-            This Week
-          </Button>
-          <Button
-            variant={timeFilter === 'month' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTimeFilter('month')}
-          >
-            This Month
-          </Button>
-          <Button
-            variant={timeFilter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTimeFilter('all')}
-          >
-            All Time
-          </Button>
+          <p className="text-muted-foreground">Top performers by XP</p>
         </div>
       </div>
 
-      {/* Top Performers */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {topPerformers.map((performer, index) => (
-          <Card key={index}>
-            <CardHeader className="pb-2">
-              <CardDescription className="text-xs">{performer.title}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{performer.icon}</span>
-                <div>
-                  <p className="font-semibold text-sm">{performer.name}</p>
-                  <p className="text-xs text-muted-foreground">{performer.value}</p>
+      {/* Top 3 Podium */}
+      {topThree.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {topThree.map((user) => (
+            <Card key={user.rank} className={`relative ${user.rank === 1 ? 'md:col-start-2 md:row-start-1' : ''}`}>
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center space-y-3">
+                  {/* Rank Icon */}
+                  <div className="text-4xl">{getRankIcon(user.rank)}</div>
+                  
+                  {/* Avatar */}
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                  </Avatar>
+
+                  {/* User Info */}
+                  <div>
+                    <h3 className="font-bold text-lg">{user.name}</h3>
+                    <p className="text-sm text-muted-foreground">@{user.username}</p>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <div className="font-semibold text-lg">{user.totalXP}</div>
+                      <div className="text-muted-foreground">XP</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-lg">{user.totalSolved}</div>
+                      <div className="text-muted-foreground">Solved</div>
+                    </div>
+                  </div>
+
+                  {/* Rank Badge */}
+                  <Badge className={getRankColor(user.rank)}>
+                    <Medal className="w-3 h-3 mr-1" />
+                    {getRankName(user.rank)}
+                  </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {/* Leaderboard Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Rankings</CardTitle>
-          <CardDescription>
-            Top performers based on points, streak, and practice sessions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {leaderboardData.map((user) => (
-              <div
-                key={user.rank}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-all hover:shadow-md ${
-                  user.rank <= 3 ? 'bg-gradient-to-r from-primary/5 to-transparent' : ''
-                }`}
-              >
-                <div className="flex items-center gap-4 flex-1">
+      {/* Rest of Leaderboard */}
+      {rest.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Rankings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {rest.map((user) => (
+                <div
+                  key={user.rank}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                >
                   {/* Rank */}
-                  <div className="flex items-center gap-2 min-w-[60px]">
-                    <Badge
-                      variant="outline"
-                      className={`text-base font-bold px-2 py-1 ${getRankColor(user.rank)}`}
-                    >
-                      {getRankIcon(user.rank)}
-                    </Badge>
-                    {getChangeIcon(user.change)}
+                  <Badge variant="outline" className={`${getRankBadgeColor(user.rank)} font-bold min-w-[3rem] justify-center`}>
+                    #{user.rank}
+                  </Badge>
+
+                  {/* Avatar */}
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                  </Avatar>
+
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold truncate">{user.name}</h4>
+                    <p className="text-sm text-muted-foreground">@{user.username}</p>
                   </div>
 
-                  {/* Avatar and Name */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {user.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="font-semibold truncate">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">Level {user.level}</p>
+                  {/* Stats */}
+                  <div className="flex gap-6 items-center">
+                    <div className="text-right">
+                      <div className="font-semibold">{user.totalXP}</div>
+                      <div className="text-xs text-muted-foreground">XP</div>
                     </div>
-                  </div>
-
-                  {/* Stats - Hidden on mobile */}
-                  <div className="hidden md:flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-primary">{user.points.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Points</p>
+                    <div className="text-right">
+                      <div className="font-semibold">{user.totalSolved}</div>
+                      <div className="text-xs text-muted-foreground">Solved</div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-orange-600">🔥 {user.streak}</p>
-                      <p className="text-xs text-muted-foreground">Streak</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-blue-600">{user.practices}</p>
-                      <p className="text-xs text-muted-foreground">Practices</p>
-                    </div>
-                  </div>
-
-                  {/* Stats - Mobile */}
-                  <div className="flex md:hidden items-center gap-3 text-sm">
-                    <Badge variant="outline" className="font-bold">
-                      {user.points.toLocaleString()} XP
+                    <Badge className={`${getRankColor(user.rank)} hidden sm:flex`}>
+                      {getRankName(user.rank)}
                     </Badge>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Your Ranking Card */}
-      <Card className="border-primary/50 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Your Ranking
-          </CardTitle>
-          <CardDescription>
-            Your current position on the leaderboard
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 rounded-lg bg-background border">
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="text-base font-bold px-3 py-1">
-                #47
-              </Badge>
-              <div>
-                <p className="font-semibold">You</p>
-                <p className="text-xs text-muted-foreground">Level 3</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <p className="text-sm font-bold text-primary">325</p>
-                <p className="text-xs text-muted-foreground">Points</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-bold text-orange-600">🔥 7</p>
-                <p className="text-xs text-muted-foreground">Streak</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-bold text-blue-600">34</p>
-                <p className="text-xs text-muted-foreground">Practices</p>
-              </div>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground mt-4 text-center">
-            Keep practicing! You&apos;re only <span className="font-bold text-primary">1431 points</span> away from the top 10! 🚀
-          </p>
-        </CardContent>
-      </Card>
+      {leaderboard.length === 0 && !loading && (
+        <Card className="p-6">
+          <p className="text-center text-muted-foreground">No users on the leaderboard yet</p>
+        </Card>
+      )}
     </div>
   );
 }

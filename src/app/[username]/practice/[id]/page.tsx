@@ -178,12 +178,14 @@ export default function QuestionDetailPage() {
   const hasNextValue = hasNext();
   const hasPrevValue = hasPrev();
 
-  // Handle back to practice list - clear session storage
+  // Handle back navigation - uses saved route (dashboard or practice list)
   const handleBackToPractice = () => {
+    const backRoute = sessionStorage.getItem('backRoute') || `/${username}/practice`;
     sessionStorage.removeItem('navigationItems');
     sessionStorage.removeItem('currentPassageId');
     sessionStorage.removeItem('currentQuestionId');
-    router.push(`/${username}/practice`);
+    sessionStorage.removeItem('backRoute');
+    router.push(backRoute);
   };
 
   // Get friendly question type name

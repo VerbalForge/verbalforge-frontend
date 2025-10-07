@@ -115,7 +115,62 @@ export interface UserPassageProgress {
   attempted: boolean;
 }
 
+export interface UserStats {
+  id: string;
+  userId: string;
+  totalSolved: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  tcSolved: number;
+  seSolved: number;
+  rcSolved: number;
+  totalXP: number;
+  rank: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastLoginDate: string;
+  totalAttempts: number;
+  profileViews: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface UserActivityLog {
+  id: string;
+  userId: string;
+  date: string; // YYYY-MM-DD
+  questionIds: string[];
+  xpGained: number;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  type: 'Text Completion' | 'Sentence Equivalence' | 'Reading Comprehension';
+  solvedAt: string;
+  xpGained: number;
+}
+
+export interface UserProfile {
+  user: User;
+  stats: UserStats;
+  recent_activity: RecentActivityItem[];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  name: string;
+  totalXP: number;
+  totalSolved: number;
+}
+
+export interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[];
+  total: number;
+}
 
 export interface LoginCredentials {
   identifier: string;
@@ -234,28 +289,6 @@ class ApiService {
 
   async getProfile(): Promise<User> {
     return this.makeRequest<User>('/user/profile');
-  }
-
-  async getUserStats(): Promise<{ totalPractices: number; currentLevel: number; experiencePoints: number; achievements: string[] }> {
-    return this.makeRequest('/user/stats');
-  }
-
-  async getPreferences(): Promise<{ profile: { visibility: boolean; progress: boolean; leaderboard: boolean } }> {
-    return this.makeRequest('/user/preferences');
-  }
-
-  async updatePreference(field: 'visibility' | 'progress' | 'leaderboard', value: boolean): Promise<{ message: string; preferences: { profile: { visibility: boolean; progress: boolean; leaderboard: boolean }; theme: string } }> {
-    return this.makeRequest('/user/preferences', {
-      method: 'PATCH',
-      body: JSON.stringify({ field, value }),
-    });
-  }
-
-  async updateTheme(theme: 'light' | 'dark'): Promise<{ message: string; theme: string }> {
-    return this.makeRequest('/user/theme', {
-      method: 'PATCH',
-      body: JSON.stringify({ theme }),
-    });
   }
 
   // Question methods
@@ -526,6 +559,57 @@ class ApiService {
     }
 
     return response.json();
+  }
+
+  // Profile and Stats methods
+  async getUserProfile(username: string): Promise<UserProfile> {
+    return this.makeRequest<UserProfile>(`/profile/${username}`);
+  }
+
+  async getUserStatsByUsername(username: string): Promise<UserStats> {
+    return this.makeRequest<UserStats>(`/profile/${username}/stats`);
+  }
+
+  async getActivityCalendar(username: string, days: number = 365): Promise<{ activities: UserActivityLog[]; days: number }> {
+    return this.makeRequest<{ activities: UserActivityLog[]; days: number }>(
+      `/profile/${username}/activity?days=${days}`
+    );
+  }
+
+  async incrementProfileView(username: string): Promise<{ message: string }> {
+    return this.makeRequest<{ message: string }>(`/profile/${username}/view`, {
+      method: 'POST',
+    });
+  }
+
+  // Leaderboard methods
+  async getLeaderboard(limit: number = 100): Promise<LeaderboardResponse> {
+    return this.makeRequest<LeaderboardResponse>(`/leaderboard?limit=${limit}`);
+  }
+
+  async updateRanks(): Promise<{ message: string }> {
+    return this.makeRequest<{ message: string }>('/leaderboard/ranks/update', {
+      method: 'POST',
+    });
+  }
+
+  // Preferences methods
+  async getPreferences(): Promise<User['preferences']> {
+    return this.makeRequest<User['preferences']>('/user/preferences');
+  }
+
+  async updatePreference(field: string, value: boolean): Promise<{ message: string; preferences: User['preferences'] }> {
+    return this.makeRequest<{ message: string; preferences: User['preferences'] }>('/user/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify({ field, value }),
+    });
+  }
+
+  async updateTheme(theme: string): Promise<{ message: string }> {
+    return this.makeRequest<{ message: string }>('/user/theme', {
+      method: 'PATCH',
+      body: JSON.stringify({ theme }),
+    });
   }
 }
 

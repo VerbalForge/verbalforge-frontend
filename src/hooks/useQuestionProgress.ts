@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiService, UserQuestionProgress } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function useQuestionProgress(questionId: string, passageId?: string) {
   const [startTime, setStartTime] = useState<number>(Date.now());
@@ -25,6 +26,15 @@ export function useQuestionProgress(questionId: string, passageId?: string) {
     fetchProgress();
   }, [questionId]);
 
+  const formatTime = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
   const submitAttempt = useCallback(async (solved: boolean) => {
     if (isSubmitting) return; // Only prevent if currently submitting, allow re-submission
 
@@ -44,6 +54,13 @@ export function useQuestionProgress(questionId: string, passageId?: string) {
         setProgress(result);
       }
       setHasSubmitted(true);
+      
+      // Show toast notification for correct answers
+      if (solved) {
+        toast.success(`Solved in ${formatTime(timeTaken)}`, {
+          duration: 4000,
+        });
+      }
     } catch (error) {
       console.error('Failed to submit attempt:', error);
       // Don't block user from continuing even if submission fails

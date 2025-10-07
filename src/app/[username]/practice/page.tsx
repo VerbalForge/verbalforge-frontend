@@ -159,6 +159,7 @@ export default function PracticePage() {
     sessionStorage.setItem('currentQuestionId', questionId);
     sessionStorage.removeItem('passageId');
     sessionStorage.removeItem('questionIds');
+    sessionStorage.setItem('backRoute', `/${username}/practice`); // Save practice list as back route
     
     // Store current filter state
     sessionStorage.setItem('practiceFilters', JSON.stringify({
@@ -191,6 +192,7 @@ export default function PracticePage() {
     sessionStorage.setItem('currentQuestionId', questionIds[0]);
     sessionStorage.removeItem('passageId');
     sessionStorage.removeItem('questionIds'); // Remove old storage keys
+    sessionStorage.setItem('backRoute', `/${username}/practice`); // Save practice list as back route
     
     // Store current filter state
     sessionStorage.setItem('practiceFilters', JSON.stringify({
