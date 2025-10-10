@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, apiService } from '@/lib/api';
+import { User } from '@/lib/models/auth';
+import { authService } from '@/lib/services/authService';
 import { SessionExpiredDialog } from '@/components/SessionExpiredDialog';
 
 interface AuthContextType {
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Try to fetch current user to validate token
-      const currentUser = await apiService.getCurrentUser();
+      const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       setLastValidation(now);
       return true;
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const currentUser = await apiService.getCurrentUser();
+          const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
           setLastValidation(Date.now());
         }
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (identifier: string, password: string) => {
     try {
-      const response = await apiService.login({ identifier, password });
+      const response = await authService.login({ identifier, password });
       setUser(response.user);
     } catch (error) {
       console.error('Login failed:', error);
@@ -136,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     photo?: string;
   }) => {
     try {
-      const response = await apiService.register(userData);
+      const response = await authService.register(userData);
       setUser(response.user);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -145,9 +146,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // Set flag to indicate intentional logout
+    // Set flag to indicate intentional logout before clearing
     sessionStorage.setItem('intentionalLogout', 'true');
-    apiService.logout();
+    
+    // Clear all session storage to remove user-specific data
+    const intentionalLogout = sessionStorage.getItem('intentionalLogout');
+    sessionStorage.clear();
+    
+    // Restore the intentionalLogout flag
+    if (intentionalLogout) {
+      sessionStorage.setItem('intentionalLogout', intentionalLogout);
+    }
+    
+    authService.logout();
     setUser(null);
     setSessionExpired(false);
   };

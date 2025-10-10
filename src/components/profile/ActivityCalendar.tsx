@@ -2,11 +2,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { UserActivityLog } from '@/lib/api';
+import { ActivityCalendarResponse } from '@/lib/models/user';
 import { useMemo } from 'react';
+import { formatDateLocal } from '@/lib/utils';
 
 interface ActivityCalendarProps {
-  activities: UserActivityLog[];
+  activities: ActivityCalendarResponse[];
   days?: number;
 }
 
@@ -15,36 +16,31 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
   const calendarData = useMemo(() => {
     // Create a map for quick lookup - handle null/undefined activities
     const activityMap = new Map((activities || []).map(a => [a.date, a]));
-    const data: { date: string; count: number; xp: number }[] = [];
+    const data: { date: string; count: number; level: number }[] = [];
     const today = new Date();
     
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      // Format date in local timezone to match backend's timezone-aware dates
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       const activity = activityMap.get(dateStr);
       
       data.push({
         date: dateStr,
-        count: activity?.questionIds.length || 0,
-        xp: activity?.xpGained || 0,
+        count: activity?.count || 0,
+        level: activity?.level || 0,
       });
     }
     
     return data;
   }, [days, activities]);
 
-  // Get intensity level for color (0-4)
-  const getIntensity = (count: number) => {
-    if (count === 0) return 0;
-    if (count <= 2) return 1;
-    if (count <= 4) return 2;
-    if (count <= 6) return 3;
-    return 4;
-  };
-
-  // Get color based on intensity
-  const getColor = (intensity: number) => {
+  // Get color based on level (0-4 from backend)
+  const getColor = (level: number) => {
     const colors = [
       'bg-muted', // 0 - no activity
       'bg-green-200 dark:bg-green-900/40', // 1
@@ -52,11 +48,11 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
       'bg-green-600 dark:bg-green-500/80', // 3
       'bg-green-800 dark:bg-green-400', // 4
     ];
-    return colors[intensity];
+    return colors[Math.min(level, 4)];
   };
 
   // Group by weeks with month separators
-  type DayData = { date: string; count: number; xp: number };
+  type DayData = { date: string; count: number; level: number };
   type WeekData = { days: DayData[]; isMonthSeparator?: boolean };
   
   const weeks = useMemo(() => {
@@ -71,7 +67,7 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
       if (index === 0 && dayOfWeek !== 0) {
         // Fill empty days at the start
         for (let i = 0; i < dayOfWeek; i++) {
-          currentWeek.push({ date: '', count: -1, xp: 0 });
+          currentWeek.push({ date: '', count: -1, level: 0 });
         }
       }
       
@@ -79,13 +75,13 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
       if (lastMonth !== -1 && currentMonth !== lastMonth) {
         // Complete current week and add it
         while (currentWeek.length < 7) {
-          currentWeek.push({ date: '', count: -1, xp: 0 });
+          currentWeek.push({ date: '', count: -1, level: 0 });
         }
         weeksArray.push({ days: currentWeek });
         
         // Add month separator (empty column)
         weeksArray.push({ 
-          days: Array(7).fill({ date: '', count: -1, xp: 0 }),
+          days: Array(7).fill({ date: '', count: -1, level: 0 }),
           isMonthSeparator: true 
         });
         
@@ -94,7 +90,7 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
         // Fill empty days for the new week
         if (dayOfWeek !== 0) {
           for (let i = 0; i < dayOfWeek; i++) {
-            currentWeek.push({ date: '', count: -1, xp: 0 });
+            currentWeek.push({ date: '', count: -1, level: 0 });
           }
         }
       }
@@ -105,7 +101,7 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
       if (dayOfWeek === 6 || index === calendarData.length - 1) {
         // Fill empty days at the end
         while (currentWeek.length < 7) {
-          currentWeek.push({ date: '', count: -1, xp: 0 });
+          currentWeek.push({ date: '', count: -1, level: 0 });
         }
         weeksArray.push({ days: currentWeek });
         currentWeek = [];
@@ -115,7 +111,7 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
     return weeksArray;
   }, [calendarData]);
 
-  const totalContributions = (activities || []).reduce((sum, a) => sum + a.questionIds.length, 0);
+  const totalContributions = (activities || []).reduce((sum, a) => sum + a.count, 0);
   const activeStreak = calculateStreak(calendarData);
 
   const getPeriodText = () => {
@@ -151,25 +147,19 @@ export function ActivityCalendar({ activities, days = 180 }: ActivityCalendarPro
                       return <div key={dayIndex} className="w-3 h-3" />;
                     }
                     
-                    const intensity = getIntensity(day.count);
-                    const dateObj = new Date(day.date);
-                    const formattedDate = dateObj.toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric',
-                      year: 'numeric'
-                    });
+                    const formattedDate = formatDateLocal(day.date);
                     
                     return (
                       <Tooltip key={dayIndex}>
                         <TooltipTrigger asChild>
                           <div
-                            className={`w-3 h-3 rounded-sm ${getColor(intensity)} transition-colors cursor-pointer hover:ring-2 hover:ring-primary`}
+                            className={`w-3 h-3 rounded-sm ${getColor(day.level)} transition-colors cursor-pointer hover:ring-2 hover:ring-primary`}
                           />
                         </TooltipTrigger>
                         <TooltipContent>
                           <div className="font-medium">{formattedDate}</div>
                           <div className="text-muted-foreground">
-                            {day.count} {day.count === 1 ? 'question' : 'questions'} • {day.xp} XP
+                            {day.count} {day.count === 1 ? 'question' : 'questions'}
                           </div>
                         </TooltipContent>
                       </Tooltip>

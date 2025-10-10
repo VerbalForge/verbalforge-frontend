@@ -1,6 +1,6 @@
 'use client';
 
-import { Question } from '@/lib/api';
+import { Question } from '@/lib/models/question';
 import { BaseQuestion } from './BaseQuestion';
 import { OptionButton } from './OptionButton';
 import { useState, useMemo, useEffect } from 'react';

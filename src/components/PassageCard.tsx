@@ -1,4 +1,4 @@
-import { PartialPassage, UserPassageProgress } from "@/lib/api";
+import { PartialPassage, UserPassageProgress } from "@/lib/models/passage";
 import { PracticeCard } from "./PracticeCard";
 import { isNewContent } from "@/lib/utils/contentUtils";
 

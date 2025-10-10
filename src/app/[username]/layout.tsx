@@ -117,7 +117,7 @@ export default function UsernameLayout({
           <Sidebar>
             <SidebarHeader>
               <div className="p-2">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold">
                   VerbalForge
                 </h1>
               </div>
@@ -195,7 +195,7 @@ export default function UsernameLayout({
               </div>
             </div>
             
-            <div className="p-6">
+            <div className="pt-4 px-6 pb-6">
               {children}
             </div>
           </main>

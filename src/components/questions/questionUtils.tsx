@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import type { Choice } from '@/lib/api';
+import type { Choice } from '@/lib/models/question';
 
 // Fisher-Yates shuffle algorithm
 export const shuffleArray = <T,>(array: T[]): T[] => {

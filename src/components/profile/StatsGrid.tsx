@@ -1,8 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserStats } from '@/lib/api';
+import { UserStats } from '@/lib/models/user';
 import { QuestionTypeBadge } from '@/components/QuestionTypeBadge';
+import { formatDateLocal } from '@/lib/utils';
 
 interface StatsGridProps {
   stats: UserStats;
@@ -81,7 +82,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
         </CardContent>
       </Card>
 
-      {/* Streak Stats */}
+      {/* Streaks & Activity */}
       <Card>
         <CardHeader>
           <CardTitle>Streaks & Activity</CardTitle>
@@ -98,15 +99,12 @@ export function StatsGrid({ stats }: StatsGridProps) {
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Last Login</span>
             <span className="text-sm">
-              {new Date(stats.lastLoginDate).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                year: 'numeric'
-              })}
+              {formatDateLocal(stats.lastLogin)}
             </span>
           </div>
         </CardContent>
       </Card>
+
     </div>
   );
 }

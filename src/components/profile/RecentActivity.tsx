@@ -7,7 +7,7 @@ import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { DifficultyBadge } from '@/components/DifficultyBadge';
 import { QuestionTypeBadge } from '@/components/QuestionTypeBadge';
 import { getTimeAgo } from '@/lib/utils/profile';
-import { RecentActivityItem } from '@/lib/api';
+import { RecentActivityItem } from '@/lib/models/user';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -19,21 +19,35 @@ export function RecentActivity({ questions }: RecentActivityProps) {
   const params = useParams();
   const username = params.username as string;
 
-  const handleQuestionClick = (questionId: string) => {
+  const handleQuestionClick = (questionId: string, passageId?: string) => {
     // Set up navigation for a single question
     // This makes the back button go to dashboard and disables prev/next
-    sessionStorage.setItem('navigationItems', JSON.stringify([
-      {
-        type: 'question',
-        id: questionId,
-        questionIds: [questionId]
-      }
-    ]));
-    sessionStorage.setItem('currentQuestionId', questionId);
-    sessionStorage.removeItem('currentPassageId');
+    if (passageId) {
+      // For passage questions, set up passage navigation
+      sessionStorage.setItem('navigationItems', JSON.stringify([
+        {
+          type: 'passage',
+          id: passageId,
+          questionIds: [questionId]
+        }
+      ]));
+      sessionStorage.setItem('currentPassageId', passageId);
+      sessionStorage.setItem('currentQuestionId', questionId);
+    } else {
+      // For standalone questions
+      sessionStorage.setItem('navigationItems', JSON.stringify([
+        {
+          type: 'question',
+          id: questionId,
+          questionIds: [questionId]
+        }
+      ]));
+      sessionStorage.setItem('currentQuestionId', questionId);
+      sessionStorage.removeItem('currentPassageId');
+    }
     sessionStorage.setItem('backRoute', `/${username}/dashboard`); // Save dashboard as the back route
   };
-  if (questions.length === 0) {
+  if (!questions || questions.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -66,8 +80,8 @@ export function RecentActivity({ questions }: RecentActivityProps) {
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-medium text-sm truncate">{question.title}</span>
                     <div className="flex items-center gap-1">
-                      <DifficultyBadge difficulty={question.difficulty} />
-                      <QuestionTypeBadge type={question.type} />
+                      <DifficultyBadge difficulty={question.difficulty_level} />
+                      <QuestionTypeBadge type={question.question_type} />
                     </div>
                   </div>
                   
@@ -87,7 +101,7 @@ export function RecentActivity({ questions }: RecentActivityProps) {
                 >
                   <Link 
                     href={`/${username}/practice/${question.id}`}
-                    onClick={() => handleQuestionClick(question.id)}
+                    onClick={() => handleQuestionClick(question.id, question.passageId)}
                   >
                     <ExternalLink className="h-4 w-4" />
                     <span className="sr-only">Open question</span>

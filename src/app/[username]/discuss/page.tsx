@@ -1,216 +1,232 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, MessageCircle, Eye, Heart } from 'lucide-react';
+import { Plus, MessageCircle, Eye, ThumbsUp, Loader2 } from 'lucide-react';
+import { Discussion } from '@/lib/models/discussion';
+import { discussionService } from '@/lib/services/discussionService';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
-// Sample forum discussions
-const discussions = [
-  {
-    id: 1,
-    title: 'How to overcome nervousness during presentations?',
-    author: 'Sarah Johnson',
-    authorInitials: 'SJ',
-    category: 'Tips & Tricks',
-    replies: 23,
-    views: 456,
-    likes: 45,
-    timeAgo: '2 hours ago',
-    excerpt: "I've been struggling with nervousness during presentations. What techniques have worked for you?",
-    isAnswered: true,
-  },
-  {
-    id: 2,
-    title: 'Best practices for impromptu speaking',
-    author: 'Michael Chen',
-    authorInitials: 'MC',
-    category: 'Impromptu',
-    replies: 15,
-    views: 234,
-    likes: 31,
-    timeAgo: '5 hours ago',
-    excerpt: 'Looking for strategies to improve my impromptu speaking skills. Any recommendations?',
-    isAnswered: false,
-  },
-  {
-    id: 3,
-    title: 'Voice modulation techniques',
-    author: 'Emily Rodriguez',
-    authorInitials: 'ER',
-    category: 'Technique',
-    replies: 42,
-    views: 789,
-    likes: 67,
-    timeAgo: '1 day ago',
-    excerpt: 'How can I improve my voice modulation to keep the audience engaged?',
-    isAnswered: true,
-  },
-  {
-    id: 4,
-    title: 'Dealing with difficult questions during Q&A',
-    author: 'David Kim',
-    authorInitials: 'DK',
-    category: 'Q&A',
-    replies: 8,
-    views: 123,
-    likes: 12,
-    timeAgo: '3 hours ago',
-    excerpt: "What's the best way to handle difficult or hostile questions during Q&A sessions?",
-    isAnswered: false,
-  },
-  {
-    id: 5,
-    title: 'Body language tips for confident speaking',
-    author: 'Lisa Wang',
-    authorInitials: 'LW',
-    category: 'Body Language',
-    replies: 56,
-    views: 1203,
-    likes: 89,
-    timeAgo: '2 days ago',
-    excerpt: 'Share your best body language tips for appearing confident while speaking.',
-    isAnswered: true,
-  },
-  {
-    id: 6,
-    title: 'Structuring a persuasive argument',
-    author: 'James Wilson',
-    authorInitials: 'JW',
-    category: 'Debate',
-    replies: 19,
-    views: 345,
-    likes: 28,
-    timeAgo: '6 hours ago',
-    excerpt: "I'm preparing for a debate. How should I structure my arguments effectively?",
-    isAnswered: true,
-  },
-  {
-    id: 7,
-    title: 'Using pauses effectively in speech',
-    author: 'Anna Martinez',
-    authorInitials: 'AM',
-    category: 'Technique',
-    replies: 34,
-    views: 567,
-    likes: 52,
-    timeAgo: '1 day ago',
-    excerpt: 'The power of strategic pauses in public speaking. Discuss!',
-    isAnswered: false,
-  },
-  {
-    id: 8,
-    title: 'Preparing for a TEDx talk',
-    author: 'Robert Taylor',
-    authorInitials: 'RT',
-    category: 'Events',
-    replies: 27,
-    views: 890,
-    likes: 76,
-    timeAgo: '3 days ago',
-    excerpt: 'Got selected for a TEDx talk! Any advice on preparation?',
-    isAnswered: true,
-  },
-];
+export default function DiscussionsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const username = params.username as string;
 
-const categories = ['All', 'Tips & Tricks', 'Impromptu', 'Technique', 'Q&A', 'Body Language', 'Debate', 'Events'];
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTag, setSelectedTag] = useState('All');
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
+  const [previousCursors, setPreviousCursors] = useState<string[]>([]);
+  const [hasMore, setHasMore] = useState(false);
 
-export default function DiscussPage() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Extract unique tags from discussions - safely handle null/undefined
+  const allTags = ['All', ...Array.from(new Set((discussions || []).flatMap(d => d.tags || [])))];
 
-  const filteredDiscussions = selectedCategory === 'All' 
-    ? discussions 
-    : discussions.filter(d => d.category === selectedCategory);
+  const fetchDiscussions = async (newCursor?: string) => {
+    try {
+      setLoading(true);
+      const response = await discussionService.getDiscussions({
+        cursor: newCursor,
+        limit: 20,
+        sortBy: 'newest',
+        tags: selectedTag !== 'All' ? [selectedTag] : undefined,
+      });
+      setDiscussions(response.discussions);
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
+    } catch (error) {
+      toast.error('Failed to load discussions');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Reset cursor when tag changes
+    setCursor(undefined);
+    setPreviousCursors([]);
+    fetchDiscussions(undefined);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTag]);
+
+  const handleNextPage = () => {
+    if (nextCursor) {
+      setPreviousCursors([...previousCursors, cursor || '']);
+      setCursor(nextCursor);
+      fetchDiscussions(nextCursor);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (previousCursors.length > 0) {
+      const newPreviousCursors = [...previousCursors];
+      const prevCursor = newPreviousCursors.pop();
+      setPreviousCursors(newPreviousCursors);
+      setCursor(prevCursor || undefined);
+      fetchDiscussions(prevCursor || undefined);
+    }
+  };
+
+  const filteredDiscussions = selectedTag === 'All' 
+    ? (discussions || [])
+    : (discussions || []).filter(d => d.tags?.includes(selectedTag));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Discussion Forum</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-xl">
             Ask questions, share insights, and learn from the community
           </p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button 
+          className="w-full sm:w-auto"
+          onClick={() => router.push(`/${username}/discuss/new`)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Discussion
         </Button>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
-        {categories.map((category) => (
-          <Button
-            key={category}
-            variant={selectedCategory === category ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedCategory(category)}
-          >
-            {category}
-          </Button>
-        ))}
-      </div>
+      {/* Tag Filter */}
+      {allTags.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {allTags.map((tag) => (
+            <Button
+              key={tag}
+              variant={selectedTag === tag ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedTag(tag)}
+            >
+              {tag}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Discussion List */}
-      <div className="space-y-4">
-        {filteredDiscussions.map((discussion) => (
-          <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg hover:text-primary transition-colors">
-                      {discussion.title}
-                    </CardTitle>
-                    {discussion.isAnswered && (
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                        ✓ Answered
-                      </Badge>
-                    )}
-                  </div>
-                  <CardDescription className="text-sm">
-                    {discussion.excerpt}
-                  </CardDescription>
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs bg-primary/10">
-                          {discussion.authorInitials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{discussion.author}</span>
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredDiscussions.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No discussions found</p>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/${username}/discuss/new`)}
+            className="mt-4"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create the first discussion
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredDiscussions.map((discussion) => {
+            const stripHtml = (html: string) => {
+              if (!html) return '';
+              const tmp = document.createElement('div');
+              tmp.innerHTML = html;
+              return tmp.textContent || tmp.innerText || '';
+            };
+            const description = stripHtml(discussion.description || '');
+            const excerpt = description.substring(0, 150) + 
+              (description.length > 150 ? '...' : '');
+
+            return (
+              <Card 
+                key={discussion.id} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => router.push(`/${username}/discuss/${discussion.id}`)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg hover:text-primary transition-colors">
+                          {discussion.title}
+                        </CardTitle>
+                        {discussion.isPinned && (
+                          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700">
+                            Pinned
+                          </Badge>
+                        )}
+                      </div>
+                      <CardDescription className="text-sm">
+                        {excerpt}
+                      </CardDescription>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs bg-primary/10">
+                              {(discussion.createdByName || 'U').charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{discussion.createdByName || 'Unknown'}</span>
+                        </div>
+                        <span>•</span>
+                        {discussion.tags && discussion.tags.length > 0 && (
+                          <>
+                            <Badge variant="outline" className="text-xs">
+                              {discussion.tags[0]}
+                            </Badge>
+                            <span>•</span>
+                          </>
+                        )}
+                        <span>{formatDistanceToNow(new Date(discussion.createdAt), { addSuffix: true })}</span>
+                      </div>
                     </div>
-                    <span>•</span>
-                    <Badge variant="outline" className="text-xs">
-                      {discussion.category}
-                    </Badge>
-                    <span>•</span>
-                    <span>{discussion.timeAgo}</span>
                   </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{discussion.replies} replies</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Eye className="w-4 h-4" />
-                  <span>{discussion.views} views</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Heart className="w-4 h-4" />
-                  <span>{discussion.likes} likes</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>{discussion.commentCount || 0} replies</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="w-4 h-4" />
+                      <span>{discussion.views || 0} views</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <ThumbsUp className="w-4 h-4" />
+                      <span>{discussion.likes || 0} likes</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {(previousCursors.length > 0 || hasMore) && (
+        <div className="flex justify-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            onClick={handlePreviousPage}
+            disabled={previousCursors.length === 0}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleNextPage}
+            disabled={!hasMore}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,9 +17,11 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { PasswordRequirements } from '@/components/password/PasswordRequirements';
 import { PasswordValidationAlert } from '@/components/password/PasswordValidationAlert';
 import { usePasswordValidation } from '@/hooks/usePasswordValidation';
-import { apiService } from '@/lib/api';
+import { userService } from '@/lib/services/userService';
+import { authService } from '@/lib/services/authService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { formatDateLocal } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,6 +85,39 @@ export default function SettingsPage() {
     showOnLeaderboard: user?.preferences?.profile?.leaderboard ?? true,
   });
 
+  // Fetch and sync preferences when component mounts
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      if (user) {
+        try {
+          const preferences = await userService.getPreferences();
+          
+          // Update privacy settings from fetched preferences
+          if (preferences?.profile) {
+            setPrivacy({
+              showProfile: preferences.profile.visibility ?? true,
+              showProgress: preferences.profile.progress ?? true,
+              showOnLeaderboard: preferences.profile.leaderboard ?? true,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch preferences:', error);
+          // Fall back to user context preferences if fetch fails
+          if (user.preferences?.profile) {
+            setPrivacy({
+              showProfile: user.preferences.profile.visibility ?? true,
+              showProgress: user.preferences.profile.progress ?? true,
+              showOnLeaderboard: user.preferences.profile.leaderboard ?? true,
+            });
+          }
+        }
+      }
+    };
+
+    fetchPreferences();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only re-fetch if user ID changes
+
   // Sync form data when user data changes
   useEffect(() => {
     if (user) {
@@ -96,15 +131,6 @@ export default function SettingsPage() {
         newPassword: '',
         confirmPassword: '',
       });
-      
-      // Update privacy settings from user preferences
-      if (user.preferences?.profile) {
-        setPrivacy({
-          showProfile: user.preferences.profile.visibility,
-          showProgress: user.preferences.profile.progress,
-          showOnLeaderboard: user.preferences.profile.leaderboard,
-        });
-      }
     }
   }, [user]);
 
@@ -126,7 +152,7 @@ export default function SettingsPage() {
     setIsSaving(true);
     
     try {
-      const response = await apiService.updateProfile({
+      const response = await userService.updateProfile({
         name: formData.name,
         phone: formData.phone,
         bio: formData.bio,
@@ -164,7 +190,7 @@ export default function SettingsPage() {
     }));
 
     try {
-      const response = await apiService.updatePreference(field, value);
+      const response = await userService.updatePreference({ key: field, value });
       
       // Update user context with new preferences
       if (setUser && user) {
@@ -249,7 +275,7 @@ export default function SettingsPage() {
     setDeleteError('');
 
     try {
-      await apiService.deleteAccount(deletePassword);
+      await authService.deleteAccount({ password: deletePassword });
       
       // Account deleted successfully
       localStorage.removeItem('token');
@@ -307,7 +333,7 @@ export default function SettingsPage() {
                 <Badge variant="outline">Level 3</Badge>
               </div>
               <p className="text-sm text-muted-foreground">@{user.username}</p>
-              <p className="text-xs text-muted-foreground">Member since {new Date(user.createdAt).toLocaleDateString()}</p>
+              <p className="text-xs text-muted-foreground">Member since {formatDateLocal(user.createdAt)}</p>
             </div>
           </div>
 

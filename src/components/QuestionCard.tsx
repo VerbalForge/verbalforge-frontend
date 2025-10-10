@@ -1,6 +1,6 @@
 'use client';
 
-import { PartialQuestion, UserQuestionProgress } from '@/lib/api';
+import { PartialQuestion, UserQuestionProgress } from '@/lib/models/question';
 import { PracticeCard } from './PracticeCard';
 import { isNewContent } from '@/lib/utils/contentUtils';
 

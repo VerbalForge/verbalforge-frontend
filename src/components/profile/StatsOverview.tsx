@@ -1,6 +1,6 @@
 'use client';
 
-import { UserStats } from '@/lib/api';
+import { UserStats } from '@/lib/models/user';
 import { DifficultyChart } from './DifficultyChart';
 import { QuestionTypeChart } from './QuestionTypeChart';
 import { PerformanceStats } from './PerformanceStats';
@@ -29,7 +29,7 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
       <PerformanceStats
         totalSolved={stats.totalSolved}
         totalAttempts={stats.totalAttempts}
-        totalXP={stats.totalXP}
+        totalXp={stats.totalXp}
       />
     </div>
   );

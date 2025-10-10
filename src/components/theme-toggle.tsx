@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
-import { apiService } from "@/lib/api"
+import { userService } from "@/lib/services/userService"
 
 import { Button } from "@/components/ui/button"
 
@@ -18,7 +18,7 @@ export function ThemeToggle() {
     // Update theme in database
     setIsUpdating(true)
     try {
-      await apiService.updateTheme(newTheme as 'light' | 'dark')
+      await userService.updateTheme({ theme: newTheme as 'light' | 'dark' })
     } catch (error) {
       console.error('Failed to update theme preference:', error)
       // Theme is still changed locally even if API fails

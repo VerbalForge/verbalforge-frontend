@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { apiService, UserProfile, UserActivityLog } from '@/lib/api';
+import { UserProfile, ActivityCalendarResponse } from '@/lib/models/user';
+import { userService } from '@/lib/services/userService';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { StatsOverview } from '@/components/profile/StatsOverview';
 import { ActivityCalendar } from '@/components/profile/ActivityCalendar';
@@ -15,7 +16,7 @@ export default function DashboardPage() {
   const username = params.username as string;
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [activities, setActivities] = useState<UserActivityLog[]>([]);
+  const [activities, setActivities] = useState<ActivityCalendarResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,13 +26,22 @@ export default function DashboardPage() {
         setLoading(true);
         setError(null);
         
-        // Fetch user profile
-        const profileData = await apiService.getUserProfile(username);
-        setProfile(profileData);
+        // Fetch all data in parallel
+        const [profileData, statsData, activityData, activityResponse] = await Promise.all([
+          userService.getUserProfile(username),
+          userService.getUserStatsByUsername(username),
+          userService.getRecentActivity(username, 10),
+          userService.getActivityCalendar(username, 365)
+        ]);
         
-        // Fetch activity calendar (last 365 days)
-        const activityResponse = await apiService.getActivityCalendar(username, 365);
-        setActivities(activityResponse.activities);
+        // Combine into UserProfile structure
+        setProfile({
+          user: profileData.user,
+          stats: statsData,
+          recent_activity: activityData
+        });
+        
+        setActivities(activityResponse);
       } catch (err) {
         console.error('Error fetching profile:', err);
         setError('Failed to load profile data');
@@ -49,10 +59,12 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-32 w-full" />
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
+          <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
+        <Skeleton className="h-96 w-full" />
         <Skeleton className="h-96 w-full" />
       </div>
     );

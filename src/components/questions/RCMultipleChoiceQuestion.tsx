@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Question, Passage, Choice } from '@/lib/api';
+import { Question, Choice } from '@/lib/models/question';
+import { Passage } from '@/lib/models/passage';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { PassageDisplay } from './PassageDisplay';
 import { getOptionsForBlank, findChoiceByOption } from '@/lib/questionUtils';

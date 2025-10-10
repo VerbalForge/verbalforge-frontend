@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface PerformanceStatsProps {
   totalSolved: number;
   totalAttempts: number;
-  totalXP: number;
+  totalXp: number;
 }
 
-export function PerformanceStats({ totalSolved, totalAttempts, totalXP }: PerformanceStatsProps) {
+export function PerformanceStats({ totalSolved, totalAttempts, totalXp }: PerformanceStatsProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -32,7 +32,7 @@ export function PerformanceStats({ totalSolved, totalAttempts, totalXP }: Perfor
           
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Total XP</span>
-            <span className="text-sm font-bold">{totalXP.toLocaleString()}</span>
+            <span className="text-sm font-bold">{totalXp.toLocaleString()}</span>
           </div>
         </div>
       </CardContent>

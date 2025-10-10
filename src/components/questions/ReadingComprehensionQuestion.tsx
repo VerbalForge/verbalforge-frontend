@@ -1,6 +1,7 @@
 'use client';
 
-import { Question, Passage } from '@/lib/api';
+import { Question } from '@/lib/models/question';
+import { Passage } from '@/lib/models/passage';
 import { RCSingleChoiceQuestion } from './RCSingleChoiceQuestion';
 import { RCMultipleChoiceQuestion } from './RCMultipleChoiceQuestion';
 

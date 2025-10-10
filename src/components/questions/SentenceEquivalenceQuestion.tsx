@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Question } from '@/lib/api';
+import { Question } from '@/lib/models/question';
 import { getOptionsForBlank, findChoiceByOption } from '@/lib/questionUtils';
 import { BaseQuestion } from './BaseQuestion';
 import { OptionButton } from './OptionButton';

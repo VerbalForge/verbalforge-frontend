@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, XCircle } from 'lucide-react';
-import { Choice } from '@/lib/api';
+import { Choice } from '@/lib/models/question';
 
 interface OptionButtonProps {
   option: string;

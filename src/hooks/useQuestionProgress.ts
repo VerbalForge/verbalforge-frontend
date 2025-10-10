@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiService, UserQuestionProgress } from '@/lib/api';
+import { UserQuestionProgress } from '@/lib/models/question';
+import { questionService } from '@/lib/services/questionService';
+import { passageService } from '@/lib/services/passageService';
 import { toast } from 'sonner';
 
 export function useQuestionProgress(questionId: string, passageId?: string) {
@@ -15,7 +17,7 @@ export function useQuestionProgress(questionId: string, passageId?: string) {
     
     const fetchProgress = async () => {
       try {
-        const data = await apiService.getQuestionProgress(questionId);
+        const data = await questionService.getQuestionProgress(questionId);
         setProgress(data);
       } catch (error) {
         console.error('Failed to fetch progress:', error);
@@ -41,16 +43,56 @@ export function useQuestionProgress(questionId: string, passageId?: string) {
     setIsSubmitting(true);
     const timeTaken = Math.floor((Date.now() - startTime) / 1000); // Convert to seconds
 
+    // Optimistically update progress state immediately
+    setProgress(prev => {
+      if (prev) {
+        // Update existing progress
+        return {
+          ...prev,
+          attempted: true,
+          solved: solved || prev.solved, // Once solved, always solved
+          timeTaken: prev.timeTaken + timeTaken,
+          lastAttemptAt: new Date().toISOString(),
+          ...(solved && { lastSolvedAt: new Date().toISOString() }),
+        };
+      } else {
+        // Create initial optimistic progress for first attempt
+        return {
+          userId: '', // Will be filled by server response
+          questionId,
+          solved,
+          attempted: true,
+          lastAttemptAt: new Date().toISOString(),
+          ...(solved && { lastSolvedAt: new Date().toISOString() }),
+          timeTaken,
+          difficulty_level: '', // Will be filled by server response
+          question_type: '', // Will be filled by server response
+          xpGained: 0, // Will be filled by server response
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    });
+
     try {
       if (passageId) {
         // Passage-based question (RC)
-        const result = await apiService.submitPassageAttempt(passageId, questionId, solved, timeTaken);
-        console.log('Progress updated (passage):', result.question);
+        const result = await passageService.submitPassageAttempt(passageId, {
+          questionAttempts: [{
+            questionId,
+            solved,
+            timeTaken,
+          }],
+        });
+        // Update with server response
         setProgress(result.question);
       } else {
         // Standalone question (TC, SE)
-        const result = await apiService.submitQuestionAttempt(questionId, solved, timeTaken);
-        console.log('Progress updated (question):', result);
+        const result = await questionService.submitQuestionAttempt(questionId, {
+          solved,
+          timeTaken,
+        });
+        // Update with server response
         setProgress(result);
       }
       setHasSubmitted(true);
@@ -60,6 +102,8 @@ export function useQuestionProgress(questionId: string, passageId?: string) {
         toast.success(`Solved in ${formatTime(timeTaken)}`, {
           duration: 4000,
         });
+        // Reset timer on correct attempt so next question starts fresh
+        setStartTime(Date.now());
       }
     } catch (error) {
       console.error('Failed to submit attempt:', error);
@@ -71,7 +115,6 @@ export function useQuestionProgress(questionId: string, passageId?: string) {
 
   const resetSubmission = useCallback(() => {
     setHasSubmitted(false);
-    setStartTime(Date.now()); // Reset timer when clearing
   }, []);
 
   return {

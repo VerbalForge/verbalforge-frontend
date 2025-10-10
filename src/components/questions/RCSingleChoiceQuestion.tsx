@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Question, Passage } from '@/lib/api';
+import { Question } from '@/lib/models/question';
+import { Passage } from '@/lib/models/passage';
 import { BaseQuestion } from './BaseQuestion';
 import { OptionButton } from './OptionButton';
 import { PassageDisplay } from './PassageDisplay';
@@ -119,6 +120,7 @@ export function RCSingleChoiceQuestion({
             <div className="grid grid-cols-1 gap-1.5">
               {shuffledOptions.map(({ option }, shuffledIndex) => {
                 const choice = findChoiceByOption(question.choices, option);
+                
                 return (
                   <OptionButton
                     key={shuffledIndex}

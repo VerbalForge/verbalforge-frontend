@@ -67,6 +67,8 @@ export function QuestionTypeChart({ tcSolved, seSolved, rcSolved }: QuestionType
                   innerRadius={50}
                   outerRadius={70}
                   strokeWidth={2}
+                  startAngle={90}
+                  endAngle={450}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />

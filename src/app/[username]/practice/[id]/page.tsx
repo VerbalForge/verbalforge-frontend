@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { apiService, Question, Passage } from '@/lib/api';
+import { Question } from '@/lib/models/question';
+import { Passage } from '@/lib/models/passage';
+import { questionService } from '@/lib/services/questionService';
+import { passageService } from '@/lib/services/passageService';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { SentenceEquivalenceQuestion } from '@/components/questions/SentenceEquivalenceQuestion';
@@ -24,7 +27,7 @@ export default function QuestionDetailPage() {
   const [navigationItems, setNavigationItems] = useState<Array<{
     type: 'passage' | 'question';
     id: string;
-    questionIds: string[];
+    questionIds?: string[];
   }>>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
   const [currentItemIndex, setCurrentItemIndex] = useState(-1);
@@ -40,12 +43,13 @@ export default function QuestionDetailPage() {
       // Load navigation items from session storage
       const storedItems = sessionStorage.getItem('navigationItems');
       const storedPassageId = sessionStorage.getItem('currentPassageId');
+      const storedNavigationIndex = sessionStorage.getItem('currentNavigationIndex');
       
       if (storedItems) {
         const items = JSON.parse(storedItems) as Array<{
           type: 'passage' | 'question';
           id: string;
-          questionIds: string[];
+          questionIds?: string[];
         }>;
         setNavigationItems(items);
         
@@ -59,24 +63,37 @@ export default function QuestionDetailPage() {
         
         // Find current item and question index
         if (storedPassageId) {
-          // We're in a passage
+          // We're in a passage - find the passage item
           const itemIndex = items.findIndex(item => item.type === 'passage' && item.id === storedPassageId);
           setCurrentItemIndex(itemIndex);
-          if (itemIndex >= 0) {
-            const questionIndex = items[itemIndex].questionIds.indexOf(questionId);
-            setCurrentQuestionIndex(questionIndex);
+          if (itemIndex >= 0 && items[itemIndex].questionIds) {
+            const questionIndex = items[itemIndex].questionIds!.indexOf(questionId);
+            setCurrentQuestionIndex(questionIndex >= 0 ? questionIndex : 0);
+          } else {
+            setCurrentQuestionIndex(0);
           }
         } else {
-          // We're in a standalone question
+          // We're in a standalone question - find by question ID
           const itemIndex = items.findIndex(item => item.type === 'question' && item.id === questionId);
-          setCurrentItemIndex(itemIndex);
-          setCurrentQuestionIndex(0);
+          
+          if (itemIndex >= 0) {
+            // Found as standalone question
+            setCurrentItemIndex(itemIndex);
+            setCurrentQuestionIndex(0);
+          } else if (storedNavigationIndex) {
+            // Fallback to stored navigation index
+            const navIndex = parseInt(storedNavigationIndex, 10);
+            if (!isNaN(navIndex) && navIndex >= 0 && navIndex < items.length) {
+              setCurrentItemIndex(navIndex);
+              setCurrentQuestionIndex(0);
+            }
+          }
         }
       }
       
       // Fetch question data
       try {
-        const data = await apiService.getQuestionById(questionId);
+        const data = await questionService.getQuestionById(questionId);
         setQuestion(data);
       } catch (err) {
         console.error('Error fetching question:', err);
@@ -99,7 +116,7 @@ export default function QuestionDetailPage() {
 
     const fetchPassage = async () => {
       try {
-        const passageData = await apiService.getPassageById(currentPassageId);
+        const passageData = await passageService.getPassageById(currentPassageId);
         setPassage(passageData);
       } catch (passageErr) {
         console.error('Error fetching passage:', passageErr);
@@ -114,23 +131,36 @@ export default function QuestionDetailPage() {
     if (currentItemIndex < 0 || navigationItems.length === 0) return;
     
     const currentItem = navigationItems[currentItemIndex];
+    if (!currentItem) return;
     
-    // Check if there's a next question in the current item (passage or question)
-    if (currentQuestionIndex < currentItem.questionIds.length - 1) {
-      // Move to next question in same item
-      const nextQuestionId = currentItem.questionIds[currentQuestionIndex + 1];
-      sessionStorage.setItem('currentQuestionId', nextQuestionId);
-      router.push(`/${username}/practice/${nextQuestionId}`);
-    } else if (currentItemIndex < navigationItems.length - 1) {
-      // Move to next item (passage or question)
+    // For passage items with questionIds
+    if (currentItem.questionIds && currentItem.questionIds.length > 0) {
+      // Check if there's a next question in the current passage
+      if (currentQuestionIndex < currentItem.questionIds.length - 1) {
+        // Move to next question in same passage
+        const nextQuestionId = currentItem.questionIds[currentQuestionIndex + 1];
+        sessionStorage.setItem('currentQuestionId', nextQuestionId);
+        router.push(`/${username}/practice/${nextQuestionId}`);
+        return;
+      }
+    }
+    
+    // Move to next item (passage or standalone question)
+    if (currentItemIndex < navigationItems.length - 1) {
       const nextItem = navigationItems[currentItemIndex + 1];
-      const nextQuestionId = nextItem.questionIds[0];
+      if (!nextItem) return;
       
-      if (nextItem.type === 'passage') {
+      let nextQuestionId: string;
+      if (nextItem.type === 'passage' && nextItem.questionIds && nextItem.questionIds.length > 0) {
+        // Next item is a passage - go to its first question
+        nextQuestionId = nextItem.questionIds[0];
         sessionStorage.setItem('currentPassageId', nextItem.id);
       } else {
+        // Next item is a standalone question
+        nextQuestionId = nextItem.id;
         sessionStorage.removeItem('currentPassageId');
       }
+      
       sessionStorage.setItem('currentQuestionId', nextQuestionId);
       router.push(`/${username}/practice/${nextQuestionId}`);
     }
@@ -140,23 +170,36 @@ export default function QuestionDetailPage() {
     if (currentItemIndex < 0 || navigationItems.length === 0) return;
     
     const currentItem = navigationItems[currentItemIndex];
+    if (!currentItem) return;
     
-    // Check if there's a previous question in the current item
-    if (currentQuestionIndex > 0) {
-      // Move to previous question in same item
-      const prevQuestionId = currentItem.questionIds[currentQuestionIndex - 1];
-      sessionStorage.setItem('currentQuestionId', prevQuestionId);
-      router.push(`/${username}/practice/${prevQuestionId}`);
-    } else if (currentItemIndex > 0) {
-      // Move to previous item's last question
+    // For passage items with questionIds
+    if (currentItem.questionIds && currentItem.questionIds.length > 0) {
+      // Check if there's a previous question in the current passage
+      if (currentQuestionIndex > 0) {
+        // Move to previous question in same passage
+        const prevQuestionId = currentItem.questionIds[currentQuestionIndex - 1];
+        sessionStorage.setItem('currentQuestionId', prevQuestionId);
+        router.push(`/${username}/practice/${prevQuestionId}`);
+        return;
+      }
+    }
+    
+    // Move to previous item
+    if (currentItemIndex > 0) {
       const prevItem = navigationItems[currentItemIndex - 1];
-      const prevQuestionId = prevItem.questionIds[prevItem.questionIds.length - 1];
+      if (!prevItem) return;
       
-      if (prevItem.type === 'passage') {
+      let prevQuestionId: string;
+      if (prevItem.type === 'passage' && prevItem.questionIds && prevItem.questionIds.length > 0) {
+        // Previous item is a passage - go to its last question
+        prevQuestionId = prevItem.questionIds[prevItem.questionIds.length - 1];
         sessionStorage.setItem('currentPassageId', prevItem.id);
       } else {
+        // Previous item is a standalone question
+        prevQuestionId = prevItem.id;
         sessionStorage.removeItem('currentPassageId');
       }
+      
       sessionStorage.setItem('currentQuestionId', prevQuestionId);
       router.push(`/${username}/practice/${prevQuestionId}`);
     }
@@ -165,14 +208,33 @@ export default function QuestionDetailPage() {
   const hasNext = () => {
     if (currentItemIndex < 0 || navigationItems.length === 0) return false;
     const currentItem = navigationItems[currentItemIndex];
-    // Has next if there's another question in current item OR another item exists
-    return currentQuestionIndex < currentItem.questionIds.length - 1 || currentItemIndex < navigationItems.length - 1;
+    if (!currentItem) return false;
+    
+    // For passages with questionIds, check if there's a next question in the passage
+    if (currentItem.questionIds && currentItem.questionIds.length > 0) {
+      if (currentQuestionIndex < currentItem.questionIds.length - 1) {
+        return true; // Has next question in current passage
+      }
+    }
+    
+    // Check if there's a next item
+    return currentItemIndex < navigationItems.length - 1;
   };
 
   const hasPrev = () => {
     if (currentItemIndex < 0 || navigationItems.length === 0) return false;
-    // Has prev if there's a previous question in current item OR a previous item exists
-    return currentQuestionIndex > 0 || currentItemIndex > 0;
+    const currentItem = navigationItems[currentItemIndex];
+    if (!currentItem) return false;
+    
+    // For passages with questionIds, check if there's a previous question in the passage
+    if (currentItem.questionIds && currentItem.questionIds.length > 0) {
+      if (currentQuestionIndex > 0) {
+        return true; // Has previous question in current passage
+      }
+    }
+    
+    // Check if there's a previous item
+    return currentItemIndex > 0;
   };
   
   const hasNextValue = hasNext();
@@ -273,7 +335,6 @@ export default function QuestionDetailPage() {
       return (
         <TextCompletionDoubleQuestion 
           question={question}
-          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
           hasNext={hasNextValue}
@@ -286,7 +347,6 @@ export default function QuestionDetailPage() {
       return (
         <TextCompletionTripleQuestion 
           question={question}
-          passageId={currentPassageId || undefined}
           onNext={handleNext}
           onPrev={handlePrev}
           hasNext={hasNextValue}

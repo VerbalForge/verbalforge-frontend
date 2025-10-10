@@ -69,6 +69,9 @@ export interface QuestionsResponse {
   page: number;
   limit: number;
   totalPages: number;
+  nextCursor?: string;         // Continuation token for next page
+  previousCursor?: string;     // Continuation token for previous page
+  hasMore: boolean;            // Indicates if more results exist
 }
 
 export interface PassagesResponse {
@@ -77,6 +80,40 @@ export interface PassagesResponse {
   page: number;
   limit: number;
   totalPages: number;
+  nextCursor?: string;         // Continuation token for next page
+  previousCursor?: string;     // Continuation token for previous page
+  hasMore: boolean;            // Indicates if more results exist
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  username: string;
+  text: string;
+  likes: number;
+  likedBy: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Discussion {
+  id: string;
+  title: string;
+  description: string;
+  questionIds: string[];
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  comments: Comment[];
+  views: number;
+  viewedBy: string[];
+  likes: number;
+  likedBy: string[];
+  tags: string[];
+  isPinned: boolean;
+  isLocked: boolean;
+  commentCount: number;
 }
 
 export interface User {
@@ -94,6 +131,13 @@ export interface User {
     };
     theme: string;
   };
+  totalXP: number;
+  rank: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastLogin: string;
+  totalAttempts: number;
+  profileViews: number;
   createdAt: string;
 }
 
@@ -105,6 +149,9 @@ export interface UserQuestionProgress {
   lastAttemptAt: string;
   lastSolvedAt?: string;
   timeTaken: number; // in seconds
+  difficulty: string;
+  questionType: string;
+  xpGained: number;
 }
 
 export interface UserPassageProgress {
@@ -116,7 +163,6 @@ export interface UserPassageProgress {
 }
 
 export interface UserStats {
-  id: string;
   userId: string;
   totalSolved: number;
   easySolved: number;
@@ -125,23 +171,30 @@ export interface UserStats {
   tcSolved: number;
   seSolved: number;
   rcSolved: number;
-  totalXP: number;
+  totalXp: number;
   rank: number;
   currentStreak: number;
   longestStreak: number;
-  lastLoginDate: string;
+  lastLogin: string;
   totalAttempts: number;
   profileViews: number;
-  createdAt: string;
-  updatedAt: string;
+}
+
+// Activity calendar response (for GitHub-style visualization)
+export interface ActivityCalendarResponse {
+  date: string;
+  count: number;
+  level: number; // 0-4 for GitHub-style activity visualization
 }
 
 export interface UserActivityLog {
   id: string;
   userId: string;
   date: string; // YYYY-MM-DD
+  questionsSolved: number;
   questionIds: string[];
-  xpGained: number;
+  totalXP: number;
+  activities: number;
 }
 
 export interface RecentActivityItem {
@@ -151,6 +204,7 @@ export interface RecentActivityItem {
   type: 'Text Completion' | 'Sentence Equivalence' | 'Reading Comprehension';
   solvedAt: string;
   xpGained: number;
+  passageId?: string;
 }
 
 export interface UserProfile {
@@ -160,11 +214,13 @@ export interface UserProfile {
 }
 
 export interface LeaderboardEntry {
+  userId: string;
   rank: number;
   username: string;
   name: string;
   totalXP: number;
   totalSolved: number;
+  currentStreak: number;
 }
 
 export interface LeaderboardResponse {
@@ -233,7 +289,15 @@ class ApiService {
         throw new Error(errorMessage || 'An error occurred');
       }
 
-      return response.json();
+      const data = await response.json();
+      
+      // Backend wraps responses in {success: true, data: {...}}
+      // Unwrap the data if it's wrapped
+      if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+        return data.data as T;
+      }
+      
+      return data as T;
     } catch (error) {
       // Re-throw the error for the calling code to handle
       throw error;
@@ -299,6 +363,7 @@ class ApiService {
     type?: string;
     topic?: string;
     new?: boolean;
+    cursor?: string;
   }): Promise<QuestionsResponse> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -307,6 +372,7 @@ class ApiService {
     if (params?.type) queryParams.append('type', params.type);
     if (params?.topic) queryParams.append('topic', params.topic);
     if (params?.new) queryParams.append('new', 'true');
+    if (params?.cursor) queryParams.append('cursor', params.cursor);
 
     const url = `/questions${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest<QuestionsResponse>(url);
@@ -322,12 +388,14 @@ class ApiService {
     limit?: number;
     difficulty?: string;
     new?: boolean;
+    cursor?: string;
   }): Promise<PassagesResponse> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.difficulty) queryParams.append('difficulty', params.difficulty);
     if (params?.new) queryParams.append('new', 'true');
+    if (params?.cursor) queryParams.append('cursor', params.cursor);
 
     const url = `/passages${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest<PassagesResponse>(url);
@@ -369,9 +437,9 @@ class ApiService {
     ]);
     
     // Collect initial items
-    let tcQuestions = tcResponse.questions || [];
-    let seQuestions = seResponse.questions || [];
-    let passages = passagesResponse.passages || [];
+    let tcQuestions = tcResponse?.questions || [];
+    let seQuestions = seResponse?.questions || [];
+    let passages = passagesResponse?.passages || [];
     
     let totalItems = tcQuestions.length + seQuestions.length + passages.length;
     
@@ -388,7 +456,7 @@ class ApiService {
             ...baseParams, 
             type: 'text_completion', 
             limit: deficit 
-          }).then(res => ({ type: 'tc', data: res.questions || [] }))
+          }).then(res => ({ type: 'tc', data: res?.questions || [] }))
         );
       }
       
@@ -398,7 +466,7 @@ class ApiService {
             ...baseParams, 
             type: 'sentence_equivalence', 
             limit: deficit 
-          }).then(res => ({ type: 'se', data: res.questions || [] }))
+          }).then(res => ({ type: 'se', data: res?.questions || [] }))
         );
       }
       
@@ -407,7 +475,7 @@ class ApiService {
           this.getPassages({ 
             ...baseParams, 
             limit: deficit 
-          }).then(res => ({ type: 'passages', data: res.passages || [] }))
+          }).then(res => ({ type: 'passages', data: res?.passages || [] }))
         );
       }
       
@@ -469,9 +537,9 @@ class ApiService {
     
     // Calculate total pages based on maximum from all responses
     const maxPages = Math.max(
-      tcResponse.totalPages || 1,
-      seResponse.totalPages || 1,
-      passagesResponse.totalPages || 1
+      tcResponse?.totalPages || 1,
+      seResponse?.totalPages || 1,
+      passagesResponse?.totalPages || 1
     );
     
     return {
@@ -489,7 +557,7 @@ class ApiService {
   ): Promise<UserQuestionProgress> {
     return this.makeRequest<UserQuestionProgress>(`/user/questions/${questionId}/attempt`, {
       method: 'POST',
-      body: JSON.stringify({ solved, time_taken: timeTaken }),
+      body: JSON.stringify({ solved, timeTaken }),
     });
   }
 
@@ -503,7 +571,13 @@ class ApiService {
       `/user/passages/${passageId}/attempt`,
       {
         method: 'POST',
-        body: JSON.stringify({ question_id: questionId, solved, time_taken: timeTaken }),
+        body: JSON.stringify({ 
+          questionAttempts: [{
+            questionId,
+            solved,
+            timeTaken
+          }]
+        }),
       }
     );
   }
@@ -529,14 +603,14 @@ class ApiService {
   async getBulkQuestionProgress(questionIds: string[]): Promise<Record<string, UserQuestionProgress>> {
     return this.makeRequest<Record<string, UserQuestionProgress>>('/user/questions/progress/bulk', {
       method: 'POST',
-      body: JSON.stringify({ question_ids: questionIds }),
+      body: JSON.stringify({ ids: questionIds }),
     });
   }
 
   async getBulkPassageProgress(passageIds: string[]): Promise<Record<string, UserPassageProgress>> {
     return this.makeRequest<Record<string, UserPassageProgress>>('/user/passages/progress/bulk', {
       method: 'POST',
-      body: JSON.stringify({ passage_ids: passageIds }),
+      body: JSON.stringify({ ids: passageIds }),
     });
   }
 
@@ -570,9 +644,12 @@ class ApiService {
     return this.makeRequest<UserStats>(`/profile/${username}/stats`);
   }
 
-  async getActivityCalendar(username: string, days: number = 365): Promise<{ activities: UserActivityLog[]; days: number }> {
-    return this.makeRequest<{ activities: UserActivityLog[]; days: number }>(
-      `/profile/${username}/activity?days=${days}`
+  async getActivityCalendar(username: string, days: number = 365): Promise<ActivityCalendarResponse[]> {
+    // Get the client's timezone offset in minutes and convert to IANA timezone name
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    return this.makeRequest<ActivityCalendarResponse[]>(
+      `/profile/${username}/activity/summary?days=${days}&timezone=${encodeURIComponent(timezone)}`
     );
   }
 
@@ -583,8 +660,8 @@ class ApiService {
   }
 
   // Leaderboard methods
-  async getLeaderboard(limit: number = 100): Promise<LeaderboardResponse> {
-    return this.makeRequest<LeaderboardResponse>(`/leaderboard?limit=${limit}`);
+  async getLeaderboard(limit: number = 100): Promise<LeaderboardEntry[]> {
+    return this.makeRequest<LeaderboardEntry[]>(`/leaderboard?limit=${limit}`);
   }
 
   async updateRanks(): Promise<{ message: string }> {
@@ -610,6 +687,136 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify({ theme }),
     });
+  }
+
+  // Discussion APIs
+  async getDiscussions(params?: {
+    page?: number;
+    limit?: number;
+    sortBy?: 'newest' | 'oldest' | 'popular' | 'views' | 'updated';
+    tags?: string[];
+  }): Promise<{
+    discussions: Discussion[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.tags) {
+      params.tags.forEach(tag => queryParams.append('tags', tag));
+    }
+    
+    return this.makeRequest(`/discussions?${queryParams.toString()}`);
+  }
+
+  async getDiscussionById(id: string): Promise<Discussion> {
+    return this.makeRequest(`/discussions/${id}`);
+  }
+
+  async createDiscussion(data: {
+    title: string;
+    description: string;
+    questionIds?: string[];
+    tags?: string[];
+  }): Promise<Discussion> {
+    return this.makeRequest('/discussions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateDiscussion(id: string, data: {
+    title?: string;
+    description?: string;
+    questionIds?: string[];
+    tags?: string[];
+  }): Promise<Discussion> {
+    return this.makeRequest(`/discussions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDiscussion(id: string): Promise<{ message: string }> {
+    return this.makeRequest(`/discussions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async incrementDiscussionView(id: string): Promise<{ message: string }> {
+    return this.makeRequest(`/discussions/${id}/view`, {
+      method: 'POST',
+    });
+  }
+
+  async toggleDiscussionLike(id: string): Promise<{ liked: boolean }> {
+    return this.makeRequest(`/discussions/${id}/like`, {
+      method: 'POST',
+    });
+  }
+
+  async addComment(discussionId: string, text: string): Promise<Comment> {
+    return this.makeRequest(`/discussions/${discussionId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  async updateComment(discussionId: string, commentId: string, text: string): Promise<{ message: string }> {
+    return this.makeRequest(`/discussions/${discussionId}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  async deleteComment(discussionId: string, commentId: string): Promise<{ message: string }> {
+    return this.makeRequest(`/discussions/${discussionId}/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async toggleCommentLike(discussionId: string, commentId: string): Promise<{ liked: boolean }> {
+    return this.makeRequest(`/discussions/${discussionId}/comments/${commentId}/like`, {
+      method: 'POST',
+    });
+  }
+
+  async getUserDiscussions(username: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    discussions: Discussion[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    return this.makeRequest(`/profile/${username}/discussions?${queryParams.toString()}`);
+  }
+
+  async searchDiscussions(query: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    discussions: Discussion[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const queryParams = new URLSearchParams({ q: query });
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    return this.makeRequest(`/discussions/search?${queryParams.toString()}`);
   }
 }
 

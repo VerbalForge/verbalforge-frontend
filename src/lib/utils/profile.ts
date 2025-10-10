@@ -15,22 +15,22 @@ export function getInitials(name: string): string {
 }
 
 /**
- * Get rank name based on rank number
+ * Get rank name based on XP (total experience points)
  */
-export function getRankName(rank: number): string {
-  if (rank >= 2000) return 'Legend';
-  if (rank >= 1500) return 'Master';
-  if (rank >= 1000) return 'Expert';
-  if (rank >= 500) return 'Advanced';
-  if (rank >= 100) return 'Intermediate';
+export function getRankName(xp: number): string {
+  if (xp >= 2000) return 'Legend';
+  if (xp >= 1500) return 'Master';
+  if (xp >= 1000) return 'Expert';
+  if (xp >= 500) return 'Advanced';
+  if (xp >= 100) return 'Intermediate';
   return 'Beginner';
 }
 
 /**
- * Get rank color class based on rank number
+ * Get rank color class based on XP
  */
-export function getRankColor(rank: number): string {
-  const rankName = getRankName(rank);
+export function getRankColor(xp: number): string {
+  const rankName = getRankName(xp);
   switch (rankName) {
     case 'Legend': return 'bg-purple-500 text-white';
     case 'Master': return 'bg-red-500 text-white';

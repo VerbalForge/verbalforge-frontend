@@ -1,9 +1,9 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserProfile } from '@/lib/api';
+import { UserProfile } from '@/lib/models/user';
 import { getInitials, getRankName, getRankColor } from '@/lib/utils/profile';
 import { Trophy, Flame, Eye } from 'lucide-react';
 
@@ -14,14 +14,18 @@ interface ProfileHeaderProps {
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const { user, stats } = profile;
 
+  // Safety check
+  if (!user || !stats) {
+    return null;
+  }
+
   return (
     <Card>
       <CardContent className="pt-0">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Avatar */}
           <Avatar className="h-24 w-24">
-            <AvatarImage src={`https://avatar.vercel.sh/${user.username}`} />
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            <AvatarFallback className='text-3xl'>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
 
           {/* User Info */}
@@ -34,9 +38,9 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             {/* Stats Row */}
             <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start">
               {/* Rank Badge */}
-              <Badge className={`${getRankColor(stats.rank)} text-sm px-3 py-1`}>
+              <Badge className={`${getRankColor(stats.totalXp)} text-sm px-3 py-1`}>
                 <Trophy className="w-3 h-3 mr-1" />
-                {getRankName(stats.rank)}
+                {getRankName(stats.totalXp)}
               </Badge>
 
               {/* Current Streak */}
@@ -61,7 +65,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             {/* XP and Questions */}
             <div className="flex flex-wrap gap-6 text-sm">
               <div>
-                <span className="font-semibold text-lg">{stats.totalXP}</span>
+                <span className="font-semibold text-lg">{stats.totalXp}</span>
                 <span className="text-muted-foreground ml-1">XP</span>
               </div>
               <div>

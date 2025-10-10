@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Passage } from '@/lib/api';
+import { Passage } from '@/lib/models/passage';
 import { Loader2, AlertCircle, List, AlignLeft } from 'lucide-react';
 
 interface PassageDisplayProps {

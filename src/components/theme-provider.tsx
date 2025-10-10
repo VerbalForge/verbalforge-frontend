@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { apiService } from "@/lib/api"
+import { authService } from "@/lib/services/authService"
 
 type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0]
 
@@ -16,7 +16,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     // Fetch user's theme preference from the backend
     const fetchTheme = async () => {
       try {
-        const user = await apiService.getCurrentUser()
+        const user = await authService.getCurrentUser()
         if (user.preferences?.theme) {
           setDefaultTheme(user.preferences.theme)
         }

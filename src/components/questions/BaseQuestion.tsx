@@ -1,13 +1,12 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Question } from '@/lib/api';
+import { Question, UserQuestionProgress } from '@/lib/models/question';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { QuestionFooter } from './QuestionFooter';
 import { DifficultyBadge } from '../DifficultyBadge';
 import { QuestionTypeBadge } from '../QuestionTypeBadge';
 import { Badge } from '@/components/ui/badge';
-import { UserQuestionProgress } from '@/lib/api';
 
 interface BaseQuestionProps {
   question: Question;
