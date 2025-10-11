@@ -18,6 +18,7 @@ interface AuthContextType {
     phone: string;
     password: string;
     photo?: string;
+    timezone?: string;
   }) => Promise<void>;
   logout: () => void;
   validateSession: () => Promise<boolean>;

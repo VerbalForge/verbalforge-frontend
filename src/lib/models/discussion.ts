@@ -9,11 +9,24 @@ export interface Comment {
   updatedAt: string;
 }
 
+export type DiscussionType = 'general' | 'question_linked';
+
+export interface LinkedQuestion {
+  questionId: string;
+  passageId?: string;
+  questionText: string;
+  questionType: string;
+  difficultyLevel: string;
+  passageTitle?: string;
+}
+
 export interface Discussion {
   id: string;
   title: string;
   description: string;
-  questionIds: string[];
+  questionIds: string[]; // Deprecated, kept for backward compatibility
+  discussionType: DiscussionType;
+  linkedQuestion?: LinkedQuestion;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -41,8 +54,9 @@ export interface DiscussionsResponse {
 export interface CreateDiscussionRequest {
   title: string;
   description: string;
-  questionIds?: string[];
+  questionIds?: string[]; // Deprecated
   tags?: string[];
+  questionId?: string; // Optional: if provided, creates a question-linked discussion
 }
 
 export interface UpdateDiscussionRequest {

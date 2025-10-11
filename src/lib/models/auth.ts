@@ -9,6 +9,7 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
+  timezone?: string; // Optional: user's timezone
 }
 
 export interface User {
@@ -38,6 +39,7 @@ export interface UserPreferences {
     leaderboard: boolean;
   };
   theme: string;
+  timezone?: string; // User's timezone (e.g., "Asia/Kolkata", "America/New_York")
 }
 
 export interface AuthResponse {
@@ -53,7 +55,7 @@ export interface UpdateProfileRequest {
 
 export interface UpdatePreferenceRequest {
   key: string;
-  value: boolean;
+  value: boolean | string; // Can be boolean for visibility/progress/leaderboard or string for timezone
 }
 
 export interface UpdateThemeRequest {

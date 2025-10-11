@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageCircle, ThumbsUp, Eye, Pin } from 'lucide-react';
 import { Discussion } from '@/lib/models/discussion';
+import { QuestionPreview } from '@/components/discussions/QuestionPreview';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 
@@ -55,9 +56,18 @@ export function DiscussionCard({ discussion, username }: DiscussionCardProps) {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Show linked question if present */}
+        {discussion.linkedQuestion && (
+          <div className="mb-3">
+            <QuestionPreview linkedQuestion={discussion.linkedQuestion} username={username} showLink={false} />
+          </div>
+        )}
+        
+        {/* Always show description */}
         <p className="text-sm text-muted-foreground line-clamp-3">
           {truncateText(description)}
         </p>
+        
         {discussion.tags && discussion.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {discussion.tags.map((tag) => (

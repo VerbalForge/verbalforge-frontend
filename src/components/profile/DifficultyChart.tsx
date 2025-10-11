@@ -10,13 +10,12 @@ import {
 } from '@/components/ui/chart';
 
 interface DifficultyChartProps {
-  totalSolved: number;
   easySolved: number;
   mediumSolved: number;
   hardSolved: number;
 }
 
-export function DifficultyChart({ totalSolved, easySolved, mediumSolved, hardSolved }: DifficultyChartProps) {
+export function DifficultyChart({ easySolved, mediumSolved, hardSolved }: DifficultyChartProps) {
   const totalQuestions = easySolved + mediumSolved + hardSolved;
 
   const chartData = [
@@ -80,7 +79,7 @@ export function DifficultyChart({ totalSolved, easySolved, mediumSolved, hardSol
             
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="text-2xl font-bold">{totalSolved}</div>
+              <div className="text-2xl font-bold">{totalQuestions}</div>
               <div className="text-[10px] text-muted-foreground">Solved</div>
             </div>
           </div>

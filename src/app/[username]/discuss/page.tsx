@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, MessageCircle, Eye, ThumbsUp, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Discussion } from '@/lib/models/discussion';
+import { DiscussionCard } from '@/components/DiscussionCard';
 import { discussionService } from '@/lib/services/discussionService';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function DiscussionsPage() {
@@ -130,81 +127,13 @@ export default function DiscussionsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredDiscussions.map((discussion) => {
-            const stripHtml = (html: string) => {
-              if (!html) return '';
-              const tmp = document.createElement('div');
-              tmp.innerHTML = html;
-              return tmp.textContent || tmp.innerText || '';
-            };
-            const description = stripHtml(discussion.description || '');
-            const excerpt = description.substring(0, 150) + 
-              (description.length > 150 ? '...' : '');
-
-            return (
-              <Card 
-                key={discussion.id} 
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => router.push(`/${username}/discuss/${discussion.id}`)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-lg hover:text-primary transition-colors">
-                          {discussion.title}
-                        </CardTitle>
-                        {discussion.isPinned && (
-                          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700">
-                            Pinned
-                          </Badge>
-                        )}
-                      </div>
-                      <CardDescription className="text-sm">
-                        {excerpt}
-                      </CardDescription>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs bg-primary/10">
-                              {(discussion.createdByName || 'U').charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{discussion.createdByName || 'Unknown'}</span>
-                        </div>
-                        <span>•</span>
-                        {discussion.tags && discussion.tags.length > 0 && (
-                          <>
-                            <Badge variant="outline" className="text-xs">
-                              {discussion.tags[0]}
-                            </Badge>
-                            <span>•</span>
-                          </>
-                        )}
-                        <span>{formatDistanceToNow(new Date(discussion.createdAt), { addSuffix: true })}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <MessageCircle className="w-4 h-4" />
-                      <span>{discussion.commentCount || 0} replies</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Eye className="w-4 h-4" />
-                      <span>{discussion.views || 0} views</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <ThumbsUp className="w-4 h-4" />
-                      <span>{discussion.likes || 0} likes</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {filteredDiscussions.map((discussion) => (
+            <DiscussionCard 
+              key={discussion.id} 
+              discussion={discussion} 
+              username={username}
+            />
+          ))}
         </div>
       )}
 

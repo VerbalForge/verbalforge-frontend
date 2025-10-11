@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
         topPerformer={topPerformer}
         topSolved={topSolved}
         userRank={userRank}
-        userXP={userProfile?.stats?.totalXp || 0}
+        userXP={userProfile?.user?.totalXP || 0}
       />
 
       <LeaderboardTable leaderboard={leaderboard} currentUsername={currentUsername} />

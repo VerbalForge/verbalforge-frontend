@@ -1,0 +1,417 @@
+[
+	{
+		"value": "UTC",
+		"label": "UTC (Coordinated Universal Time)",
+		"offset": "+00:00"
+	},
+	{
+		"value": "Africa/Abidjan",
+		"label": "Africa/Abidjan (GMT)",
+		"offset": "+00:00"
+	},
+	{
+		"value": "Africa/Accra",
+		"label": "Africa/Accra (GMT)",
+		"offset": "+00:00"
+	},
+	{
+		"value": "Africa/Addis_Ababa",
+		"label": "Africa/Addis Ababa (EAT)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "Africa/Algiers",
+		"label": "Africa/Algiers (CET)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Africa/Cairo",
+		"label": "Africa/Cairo (EET)",
+		"offset": "+02:00"
+	},
+	{
+		"value": "Africa/Casablanca",
+		"label": "Africa/Casablanca (WET)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Africa/Johannesburg",
+		"label": "Africa/Johannesburg (SAST)",
+		"offset": "+02:00"
+	},
+	{
+		"value": "Africa/Lagos",
+		"label": "Africa/Lagos (WAT)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Africa/Nairobi",
+		"label": "Africa/Nairobi (EAT)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "America/Anchorage",
+		"label": "America/Anchorage (AKST/AKDT)",
+		"offset": "-09:00"
+	},
+	{
+		"value": "America/Argentina/Buenos_Aires",
+		"label": "America/Buenos Aires (ART)",
+		"offset": "-03:00"
+	},
+	{
+		"value": "America/Bogota",
+		"label": "America/Bogota (COT)",
+		"offset": "-05:00"
+	},
+	{
+		"value": "America/Caracas",
+		"label": "America/Caracas (VET)",
+		"offset": "-04:00"
+	},
+	{
+		"value": "America/Chicago",
+		"label": "America/Chicago (CST/CDT)",
+		"offset": "-06:00"
+	},
+	{
+		"value": "America/Denver",
+		"label": "America/Denver (MST/MDT)",
+		"offset": "-07:00"
+	},
+	{
+		"value": "America/Los_Angeles",
+		"label": "America/Los Angeles (PST/PDT)",
+		"offset": "-08:00"
+	},
+	{
+		"value": "America/Mexico_City",
+		"label": "America/Mexico City (CST/CDT)",
+		"offset": "-06:00"
+	},
+	{
+		"value": "America/New_York",
+		"label": "America/New York (EST/EDT)",
+		"offset": "-05:00"
+	},
+	{
+		"value": "America/Phoenix",
+		"label": "America/Phoenix (MST)",
+		"offset": "-07:00"
+	},
+	{
+		"value": "America/Sao_Paulo",
+		"label": "America/São Paulo (BRT)",
+		"offset": "-03:00"
+	},
+	{
+		"value": "America/Toronto",
+		"label": "America/Toronto (EST/EDT)",
+		"offset": "-05:00"
+	},
+	{
+		"value": "America/Vancouver",
+		"label": "America/Vancouver (PST/PDT)",
+		"offset": "-08:00"
+	},
+	{
+		"value": "Asia/Baghdad",
+		"label": "Asia/Baghdad (AST)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "Asia/Baku",
+		"label": "Asia/Baku (AZT)",
+		"offset": "+04:00"
+	},
+	{
+		"value": "Asia/Bangkok",
+		"label": "Asia/Bangkok (ICT)",
+		"offset": "+07:00"
+	},
+	{
+		"value": "Asia/Colombo",
+		"label": "Asia/Colombo (IST)",
+		"offset": "+05:30"
+	},
+	{
+		"value": "Asia/Dhaka",
+		"label": "Asia/Dhaka (BST)",
+		"offset": "+06:00"
+	},
+	{
+		"value": "Asia/Dubai",
+		"label": "Asia/Dubai (GST)",
+		"offset": "+04:00"
+	},
+	{
+		"value": "Asia/Hong_Kong",
+		"label": "Asia/Hong Kong (HKT)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Asia/Jakarta",
+		"label": "Asia/Jakarta (WIB)",
+		"offset": "+07:00"
+	},
+	{
+		"value": "Asia/Jerusalem",
+		"label": "Asia/Jerusalem (IST)",
+		"offset": "+02:00"
+	},
+	{
+		"value": "Asia/Karachi",
+		"label": "Asia/Karachi (PKT)",
+		"offset": "+05:00"
+	},
+	{
+		"value": "Asia/Kathmandu",
+		"label": "Asia/Kathmandu (NPT)",
+		"offset": "+05:45"
+	},
+	{
+		"value": "Asia/Kolkata",
+		"label": "Asia/Kolkata (IST)",
+		"offset": "+05:30"
+	},
+	{
+		"value": "Asia/Kuala_Lumpur",
+		"label": "Asia/Kuala Lumpur (MYT)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Asia/Kuwait",
+		"label": "Asia/Kuwait (AST)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "Asia/Manila",
+		"label": "Asia/Manila (PHT)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Asia/Muscat",
+		"label": "Asia/Muscat (GST)",
+		"offset": "+04:00"
+	},
+	{
+		"value": "Asia/Riyadh",
+		"label": "Asia/Riyadh (AST)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "Asia/Seoul",
+		"label": "Asia/Seoul (KST)",
+		"offset": "+09:00"
+	},
+	{
+		"value": "Asia/Shanghai",
+		"label": "Asia/Shanghai (CST)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Asia/Singapore",
+		"label": "Asia/Singapore (SGT)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Asia/Taipei",
+		"label": "Asia/Taipei (CST)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Asia/Tehran",
+		"label": "Asia/Tehran (IRST)",
+		"offset": "+03:30"
+	},
+	{
+		"value": "Asia/Tokyo",
+		"label": "Asia/Tokyo (JST)",
+		"offset": "+09:00"
+	},
+	{
+		"value": "Asia/Yangon",
+		"label": "Asia/Yangon (MMT)",
+		"offset": "+06:30"
+	},
+	{
+		"value": "Atlantic/Azores",
+		"label": "Atlantic/Azores (AZOT/AZOST)",
+		"offset": "-01:00"
+	},
+	{
+		"value": "Atlantic/Cape_Verde",
+		"label": "Atlantic/Cape Verde (CVT)",
+		"offset": "-01:00"
+	},
+	{
+		"value": "Australia/Adelaide",
+		"label": "Australia/Adelaide (ACDT/ACST)",
+		"offset": "+10:30"
+	},
+	{
+		"value": "Australia/Brisbane",
+		"label": "Australia/Brisbane (AEST)",
+		"offset": "+10:00"
+	},
+	{
+		"value": "Australia/Melbourne",
+		"label": "Australia/Melbourne (AEDT/AEST)",
+		"offset": "+11:00"
+	},
+	{
+		"value": "Australia/Perth",
+		"label": "Australia/Perth (AWST)",
+		"offset": "+08:00"
+	},
+	{
+		"value": "Australia/Sydney",
+		"label": "Australia/Sydney (AEDT/AEST)",
+		"offset": "+11:00"
+	},
+	{
+		"value": "Europe/Amsterdam",
+		"label": "Europe/Amsterdam (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Athens",
+		"label": "Europe/Athens (EET/EEST)",
+		"offset": "+02:00"
+	},
+	{
+		"value": "Europe/Berlin",
+		"label": "Europe/Berlin (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Brussels",
+		"label": "Europe/Brussels (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Bucharest",
+		"label": "Europe/Bucharest (EET/EEST)",
+		"offset": "+02:00"
+	},
+	{
+		"value": "Europe/Budapest",
+		"label": "Europe/Budapest (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Copenhagen",
+		"label": "Europe/Copenhagen (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Dublin",
+		"label": "Europe/Dublin (GMT/IST)",
+		"offset": "+00:00"
+	},
+	{
+		"value": "Europe/Helsinki",
+		"label": "Europe/Helsinki (EET/EEST)",
+		"offset": "+02:00"
+	},
+	{
+		"value": "Europe/Istanbul",
+		"label": "Europe/Istanbul (TRT)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "Europe/Lisbon",
+		"label": "Europe/Lisbon (WET/WEST)",
+		"offset": "+00:00"
+	},
+	{
+		"value": "Europe/London",
+		"label": "Europe/London (GMT/BST)",
+		"offset": "+00:00"
+	},
+	{
+		"value": "Europe/Madrid",
+		"label": "Europe/Madrid (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Moscow",
+		"label": "Europe/Moscow (MSK)",
+		"offset": "+03:00"
+	},
+	{
+		"value": "Europe/Oslo",
+		"label": "Europe/Oslo (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Paris",
+		"label": "Europe/Paris (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Prague",
+		"label": "Europe/Prague (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Rome",
+		"label": "Europe/Rome (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Stockholm",
+		"label": "Europe/Stockholm (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Vienna",
+		"label": "Europe/Vienna (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Warsaw",
+		"label": "Europe/Warsaw (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Europe/Zurich",
+		"label": "Europe/Zurich (CET/CEST)",
+		"offset": "+01:00"
+	},
+	{
+		"value": "Pacific/Auckland",
+		"label": "Pacific/Auckland (NZDT/NZST)",
+		"offset": "+13:00"
+	},
+	{
+		"value": "Pacific/Fiji",
+		"label": "Pacific/Fiji (FJT)",
+		"offset": "+12:00"
+	},
+	{
+		"value": "Pacific/Guam",
+		"label": "Pacific/Guam (ChST)",
+		"offset": "+10:00"
+	},
+	{
+		"value": "Pacific/Honolulu",
+		"label": "Pacific/Honolulu (HST)",
+		"offset": "-10:00"
+	},
+	{
+		"value": "Pacific/Pago_Pago",
+		"label": "Pacific/Pago Pago (SST)",
+		"offset": "-11:00"
+	},
+	{
+		"value": "Pacific/Port_Moresby",
+		"label": "Pacific/Port Moresby (PGT)",
+		"offset": "+10:00"
+	},
+	{
+		"value": "Pacific/Tongatapu",
+		"label": "Pacific/Tongatapu (TOT)",
+		"offset": "+13:00"
+	}
+]

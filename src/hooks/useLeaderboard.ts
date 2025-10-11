@@ -55,7 +55,7 @@ export function useLeaderboard(currentUsername: string) {
     [leaderboard, currentUsername]
   );
 
-  const userRank = userProfile?.stats?.rank;
+  const userRank = userProfile?.user?.rank;
 
   return {
     leaderboard,

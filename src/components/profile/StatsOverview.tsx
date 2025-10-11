@@ -13,7 +13,6 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
         <DifficultyChart
-          totalSolved={stats.totalSolved}
           easySolved={stats.easySolved}
           mediumSolved={stats.mediumSolved}
           hardSolved={stats.hardSolved}

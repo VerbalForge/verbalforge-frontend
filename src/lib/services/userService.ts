@@ -4,6 +4,7 @@ import {
   UserProfile,
   UserStats,
   RecentActivityItem,
+  UserActivity,
   ActivityCalendarResponse,
   LeaderboardEntry,
   UpdateProfileRequest,
@@ -34,9 +35,15 @@ export class UserService {
     return httpClient.get<RecentActivityItem[]>(`/profile/${username}/activity?limit=${limit}`);
   }
 
+  async getUserActivities(username: string, limit: number = 10): Promise<UserActivity[]> {
+    return httpClient.get<UserActivity[]>(`/profile/${username}/activity?limit=${limit}`);
+  }
+
   async getActivityCalendar(username: string, days: number = 365): Promise<ActivityCalendarResponse[]> {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    console.log(timezone);
     return httpClient.get<ActivityCalendarResponse[]>(
-      `/profile/${username}/activity/summary?days=${days}`
+      `/profile/${username}/activity/summary?days=${days}&timezone=${encodeURIComponent(timezone)}`
     );
   }
 

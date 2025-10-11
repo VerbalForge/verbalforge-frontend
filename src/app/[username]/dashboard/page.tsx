@@ -27,10 +27,9 @@ export default function DashboardPage() {
         setError(null);
         
         // Fetch all data in parallel
-        const [profileData, statsData, activityData, activityResponse] = await Promise.all([
+        const [profileData, statsData, activityResponse] = await Promise.all([
           userService.getUserProfile(username),
           userService.getUserStatsByUsername(username),
-          userService.getRecentActivity(username, 10),
           userService.getActivityCalendar(username, 365)
         ]);
         
@@ -38,7 +37,7 @@ export default function DashboardPage() {
         setProfile({
           user: profileData.user,
           stats: statsData,
-          recent_activity: activityData
+          recent_activity: [] // Not used anymore
         });
         
         setActivities(activityResponse);
@@ -90,7 +89,7 @@ export default function DashboardPage() {
       <ActivityCalendar activities={activities} days={365} />
 
       {/* Recent Activity */}
-      <RecentActivity questions={profile.recent_activity} />
+      <RecentActivity username={username} />
     </div>
   );
 }

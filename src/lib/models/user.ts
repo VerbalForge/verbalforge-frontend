@@ -34,6 +34,37 @@ export interface RecentActivityItem {
   passageId?: string;
 }
 
+export interface QuestionActivityMetadata {
+  question_id: string;
+  question_text: string;
+  solved: boolean;
+  passage_id?: string;
+  difficulty_level: string;
+  question_type: string;
+  time_taken: number;
+  xp_gained?: number;
+}
+
+export interface DiscussionActivityMetadata {
+  discussion_id: string;
+  discussion_title: string;
+  comment_id?: string;
+  parent_id?: string;
+  tags?: string[];
+  action_type: 'created' | 'updated' | 'comment_added' | 'comment_updated' | 'discussion_liked' | 'comment_liked';
+  is_comment: boolean;
+}
+
+export interface UserActivity {
+  id: string;
+  userId: string;
+  activityType: 'question' | 'discussion';
+  date: string;
+  timestamp: string;
+  metadata: QuestionActivityMetadata | DiscussionActivityMetadata;
+  createdAt: string;
+}
+
 export interface ActivityCalendarResponse {
   date: string;
   count: number;

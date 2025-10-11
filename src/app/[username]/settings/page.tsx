@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { EmailInput } from '@/components/ui/email-input';
@@ -34,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Edit } from 'lucide-react';
+import timezones from '@/data/timezones.json';
 
 export default function SettingsPage() {
   const { user, validateSession, logout, setUser } = useAuth();
@@ -85,6 +87,11 @@ export default function SettingsPage() {
     showOnLeaderboard: user?.preferences?.profile?.leaderboard ?? true,
   });
 
+  // General preferences
+  const [timezone, setTimezone] = useState(
+    user?.preferences?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
+
   // Fetch and sync preferences when component mounts
   useEffect(() => {
     const fetchPreferences = async () => {
@@ -100,6 +107,11 @@ export default function SettingsPage() {
               showOnLeaderboard: preferences.profile.leaderboard ?? true,
             });
           }
+
+          // Update timezone from fetched preferences
+          if (preferences?.timezone) {
+            setTimezone(preferences.timezone);
+          }
         } catch (error) {
           console.error('Failed to fetch preferences:', error);
           // Fall back to user context preferences if fetch fails
@@ -109,6 +121,9 @@ export default function SettingsPage() {
               showProgress: user.preferences.profile.progress ?? true,
               showOnLeaderboard: user.preferences.profile.leaderboard ?? true,
             });
+          }
+          if (user.preferences?.timezone) {
+            setTimezone(user.preferences.timezone);
           }
         }
       }
@@ -206,6 +221,27 @@ export default function SettingsPage() {
         [fieldMap[field]]: !value,
       }));
       console.error('Failed to update preference:', error);
+    }
+  };
+
+  const handleTimezoneChange = async (newTimezone: string) => {
+    // Optimistic update
+    setTimezone(newTimezone);
+
+    try {
+      const response = await userService.updatePreference({ key: 'timezone', value: newTimezone });
+      
+      // Update user context with new preferences
+      if (setUser && user) {
+        setUser({
+          ...user,
+          preferences: response.preferences,
+        });
+      }
+    } catch (error) {
+      // Revert on error
+      setTimezone(timezone);
+      console.error('Failed to update timezone:', error);
     }
   };
 
@@ -629,6 +665,38 @@ export default function SettingsPage() {
               checked={privacy.showOnLeaderboard}
               onCheckedChange={(checked) => handlePrivacyChange('leaderboard', checked)}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* General Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle>General Preferences</CardTitle>
+          <CardDescription>
+            Customize your general application settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5 flex-1">
+              <Label htmlFor="timezone">Timezone</Label>
+              <p className="text-sm text-muted-foreground">
+                Your timezone affects when activities are recorded in your calendar
+              </p>
+            </div>
+            <Select value={timezone} onValueChange={handleTimezoneChange}>
+              <SelectTrigger className="w-[280px]">
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {timezones.map((tz) => (
+                  <SelectItem key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

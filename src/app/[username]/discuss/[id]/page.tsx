@@ -27,6 +27,7 @@ import {
 import { ThumbsUp, MessageCircle, Eye, MoreVertical, Loader2, Edit, Trash, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Discussion } from '@/lib/models/discussion';
 import { discussionService } from '@/lib/services/discussionService';
+import { QuestionPreview } from '@/components/discussions/QuestionPreview';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -275,6 +276,18 @@ export default function DiscussionPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Show linked question if present */}
+          {discussion.linkedQuestion && (
+            <div className="mb-6">
+              <QuestionPreview 
+                linkedQuestion={discussion.linkedQuestion} 
+                username={username}
+                showLink={true}
+              />
+            </div>
+          )}
+          
+          {/* Always show description */}
           <div
             className="prose prose-sm dark:prose-invert max-w-none mb-6"
             dangerouslySetInnerHTML={{ __html: discussion.description }}

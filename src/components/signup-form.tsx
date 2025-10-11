@@ -109,12 +109,16 @@ export function SignupForm() {
     setIsLoading(true)
 
     try {
+      // Get user's timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
       await registerUser({
         name: formData.name,
         username: formData.username,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
+        timezone: timezone,
       })
 
       setShouldRedirect(true)
