@@ -47,8 +47,10 @@ jobs:
           action: "upload"
           app_location: "/"       # App source code path
           api_location: ""        # API source code path - optional
-          output_location: "build" # Built app content directory
+          output_location: ".next" # Next.js output directory for Standard SKU
           github_id_token: ${{ steps.idtoken.outputs.result }}
+        env:
+          NEXT_PUBLIC_API_URL: http://20.240.193.218:8080
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
