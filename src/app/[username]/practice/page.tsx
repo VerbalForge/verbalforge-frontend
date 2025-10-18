@@ -71,9 +71,9 @@ export default function PracticePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <p className="text-muted-foreground mt-2 text-lg">
+        <p className="text-muted-foreground text-lg">
           Click on a question to start practicing!
         </p>
       </div>

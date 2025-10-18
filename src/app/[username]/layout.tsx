@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { BarChart3, ClipboardCheck, MessageCircle, Trophy, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { BarChart3, ClipboardCheck, MessageCircle, Trophy, ChevronDown, LogOut, Settings, BookOpen } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PracticeTimer } from '@/components/PracticeTimer';
 
@@ -82,6 +82,12 @@ export default function UsernameLayout({
       path: `/${username}/dashboard`,
       icon: <BarChart3 className="w-4 h-4" />
     },
+        { 
+      id: 'learn', 
+      name: 'Learn',
+      path: `/${username}/learn`,
+      icon: <BookOpen className="w-4 h-4" />
+    },
     { 
       id: 'practice', 
       name: 'Practice',
@@ -107,8 +113,18 @@ export default function UsernameLayout({
     pathname === item.path || pathname.startsWith(item.path + '/')
   );
 
+  // Determine page title
+  const getPageTitle = () => {
+    if (pathname.includes('/settings')) return 'Settings';
+    if (currentPage) return currentPage.name;
+    return 'VerbalForge';
+  };
+
   // Check if we're on the Practice page
   const isPracticePage = pathname === `/${username}/practice` || pathname.startsWith(`/${username}/practice/`);
+  
+  // Check if we're on the Learn page
+  const isLearnPage = pathname === `/${username}/learn` || pathname.startsWith(`/${username}/learn/`);
 
   return (
     <ProtectedRoute>
@@ -184,10 +200,10 @@ export default function UsernameLayout({
           <main className="flex-1">
             <div className="sticky top-0 z-10 bg-background border-b">
               <div className="flex items-center h-16 px-6 gap-4">
-                {isPracticePage && <SidebarTrigger />}
+                {(isPracticePage || isLearnPage) && <SidebarTrigger />}
                 <div className="flex-1">
                   <h1 className="text-xl font-semibold">
-                    {currentPage?.name || 'VerbalForge'}
+                    {getPageTitle()}
                   </h1>
                 </div>
                 <PracticeTimer />

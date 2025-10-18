@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <p className="text-xl">See how you rank against other learners!</p>
+          <p className="text-muted-foreground text-lg">See how you rank against other learners!</p>
         </div>
       </div>
 
