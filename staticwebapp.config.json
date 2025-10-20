@@ -2,7 +2,14 @@
 	"platform": {
 		"apiRuntime": "node:20"
 	},
+	"routes": [
+		{
+			"route": "/*",
+			"allowedRoles": ["anonymous"]
+		}
+	],
 	"navigationFallback": {
-		"rewrite": "/api/server"
+		"rewrite": "/_next/server.js",
+		"exclude": ["/_next/*", "/static/*", "/*.{css,scss,sass,js,jsx,ts,tsx,json,png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}"]
 	}
 }
