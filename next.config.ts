@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // SSR enabled for dynamic routes like [username]
+  output: "standalone",
   images: {
     unoptimized: true,
   },

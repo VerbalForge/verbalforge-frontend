@@ -85,5 +85,8 @@
 	},
 	"description": "VerbalForge Frontend - Next.js application with Tailwind CSS and shadcn/ui",
 	"author": "",
-	"license": "MIT"
+	"license": "MIT",
+	"engines": {
+		"node": ">=18.17.0"
+	}
 }
