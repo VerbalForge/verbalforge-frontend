@@ -1,39 +1,24 @@
 import { PracticeContentGrid } from './PracticeContentGrid';
 import { PracticeSkeleton } from './PracticeSkeleton';
-import { 
-  PartialQuestion, 
-  UserQuestionProgress
-} from '@/lib/models/question';
-import { 
-  PartialPassage, 
-  UserPassageProgress 
-} from '@/lib/models/passage';
+import { PracticeItem } from '@/lib/models/practice';
 
 interface PracticeContentProps {
   isLoading: boolean;
   error: string | null;
-  questions: PartialQuestion[];
-  passages: PartialPassage[];
-  questionProgress: Record<string, UserQuestionProgress>;
-  passageProgress: Record<string, UserPassageProgress>;
+  items: PracticeItem[];
   currentPage: number;
   totalPages: number;
-  onQuestionClick: (questionId: string) => void;
-  onPassageClick: (passageId: string, questionIds: string[]) => void;
+  onItemClick: (item: PracticeItem) => void;
   onPageChange: (page: number) => void;
 }
 
 export function PracticeContent({
   isLoading,
   error,
-  questions,
-  passages,
-  questionProgress,
-  passageProgress,
+  items,
   currentPage,
   totalPages,
-  onQuestionClick,
-  onPassageClick,
+  onItemClick,
   onPageChange,
 }: PracticeContentProps) {
   if (isLoading) {
@@ -50,14 +35,10 @@ export function PracticeContent({
 
   return (
     <PracticeContentGrid
-      questions={questions}
-      passages={passages}
-      questionProgress={questionProgress}
-      passageProgress={passageProgress}
+      items={items}
       currentPage={currentPage}
       totalPages={totalPages}
-      onQuestionClick={onQuestionClick}
-      onPassageClick={onPassageClick}
+      onItemClick={onItemClick}
       onPageChange={onPageChange}
     />
   );

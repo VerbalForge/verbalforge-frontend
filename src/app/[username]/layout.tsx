@@ -27,7 +27,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { BarChart3, ClipboardCheck, MessageCircle, Trophy, ChevronDown, LogOut, Settings, BookOpen } from 'lucide-react';
+import { Logo } from '@/components/Logo';
+import { BarChart3, ClipboardCheck, MessageCircle, Trophy, ChevronDown, LogOut, Settings, BookOpen, HelpCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PracticeTimer } from '@/components/PracticeTimer';
 
@@ -132,7 +133,8 @@ export default function UsernameLayout({
         <div className="flex min-h-screen w-full">
           <Sidebar>
             <SidebarHeader>
-              <div className="p-2">
+              <div className="p-2 flex items-center gap-2">
+                <Logo width={24} height={24} />
                 <h1 className="text-xl font-bold">
                   VerbalForge
                 </h1>
@@ -180,6 +182,12 @@ export default function UsernameLayout({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem asChild>
+                      <Link href="/support" className="flex items-center cursor-pointer">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Support
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/${username}/settings`} className="flex items-center cursor-pointer">
                         <Settings className="w-4 h-4 mr-2" />

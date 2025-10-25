@@ -5,6 +5,7 @@ import { usePracticeContent } from '@/hooks/usePracticeContent';
 import { PracticeFilters } from '@/components/practice/PracticeFilters';
 import { PracticeContent } from '@/components/practice/PracticeContent';
 import { buildNavigationItems, saveNavigationToSession } from '@/lib/utils/practiceNavigation';
+import { isPassageItem, PracticeItem } from '@/lib/models';
 
 export default function PracticePage() {
   const router = useRouter();
@@ -12,62 +13,43 @@ export default function PracticePage() {
   const username = params.username as string;
 
   const {
-    questions,
-    passages,
-    questionProgress,
-    passageProgress,
+    items,
     loading,
     error,
     page,
     totalPages,
     difficultyFilter,
     typeFilter,
-    showNew,
     handleDifficultyChange,
     handleTypeChange,
-    handleShowNewToggle,
     setPage,
   } = usePracticeContent();
 
-  const handleQuestionClick = (questionId: string) => {
-    const navigationItems = buildNavigationItems(passages, questions);
-    saveNavigationToSession(navigationItems, questionId, 'question');
+  const handleItemClick = (item: PracticeItem) => {
+    const navigationItems = buildNavigationItems(items);
+    saveNavigationToSession(navigationItems, item.id, item.type);
     
-    sessionStorage.setItem('currentQuestionId', questionId);
-    sessionStorage.removeItem('passageId');
-    sessionStorage.removeItem('questionIds');
     sessionStorage.setItem('backRoute', `/${username}/practice`);
     
     // Store current filter state
     sessionStorage.setItem('practiceFilters', JSON.stringify({
       difficulty: difficultyFilter,
       type: typeFilter,
-      showNew,
       page,
     }));
     
-    router.push(`/${username}/practice/${questionId}`);
-  };
-
-  const handlePassageClick = (passageId: string, questionIds: string[]) => {
-    const navigationItems = buildNavigationItems(passages, questions);
-    saveNavigationToSession(navigationItems, passageId, 'passage');
-    
-    sessionStorage.setItem('currentPassageId', passageId);
-    sessionStorage.setItem('currentQuestionId', questionIds[0]);
-    sessionStorage.removeItem('passageId');
-    sessionStorage.removeItem('questionIds');
-    sessionStorage.setItem('backRoute', `/${username}/practice`);
-    
-    // Store current filter state
-    sessionStorage.setItem('practiceFilters', JSON.stringify({
-      difficulty: difficultyFilter,
-      type: typeFilter,
-      showNew,
-      page,
-    }));
-    
-    router.push(`/${username}/practice/${questionIds[0]}`);
+    // Navigate to first question of passage or directly to question
+    if (isPassageItem(item)) {
+      if (item.question_ids && item.question_ids.length > 0) {
+        sessionStorage.setItem('currentPassageId', item.id);
+        sessionStorage.setItem('currentQuestionId', item.question_ids[0]);
+        router.push(`/${username}/practice/${item.question_ids[0]}`);
+      }
+    } else {
+      sessionStorage.setItem('currentQuestionId', item.id);
+      sessionStorage.removeItem('currentPassageId');
+      router.push(`/${username}/practice/${item.id}`);
+    }
   };
 
   return (
@@ -81,23 +63,17 @@ export default function PracticePage() {
       <PracticeFilters
         difficultyFilter={difficultyFilter}
         typeFilter={typeFilter}
-        showNew={showNew}
         onDifficultyChange={handleDifficultyChange}
         onTypeChange={handleTypeChange}
-        onShowNewToggle={handleShowNewToggle}
       />
 
       <PracticeContent
         isLoading={loading}
         error={error}
-        questions={questions}
-        passages={passages}
-        questionProgress={questionProgress}
-        passageProgress={passageProgress}
+        items={items}
         currentPage={page}
         totalPages={totalPages}
-        onQuestionClick={handleQuestionClick}
-        onPassageClick={handlePassageClick}
+        onItemClick={handleItemClick}
         onPageChange={setPage}
       />
     </div>

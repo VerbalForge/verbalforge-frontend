@@ -3,19 +3,27 @@
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
+import { usePathname } from "next/navigation"
 import { userService } from "@/lib/services/userService"
 
 import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
+  const pathname = usePathname()
   const [isUpdating, setIsUpdating] = React.useState(false)
 
   const toggleTheme = async () => {
     const newTheme = theme === "dark" ? "light" : "dark"
     setTheme(newTheme)
     
-    // Update theme in database
+    // Don't update preferences for public routes
+    const publicRoutes = ['/', '/login', '/register', '/support']
+    if (publicRoutes.includes(pathname)) {
+      return
+    }
+    
+    // Update theme in database for authenticated users
     setIsUpdating(true)
     try {
       await userService.updateTheme({ theme: newTheme as 'light' | 'dark' })
@@ -34,7 +42,7 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       disabled={isUpdating}
     >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Sun className="absolute h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       <span className="sr-only">Toggle theme</span>
     </Button>

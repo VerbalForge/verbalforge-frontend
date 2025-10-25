@@ -7,12 +7,9 @@ import { authService } from "@/lib/services/authService"
 type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0]
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  const [mounted, setMounted] = React.useState(false)
   const [defaultTheme, setDefaultTheme] = React.useState<string>("system")
 
   React.useEffect(() => {
-    setMounted(true)
-    
     // Fetch user's theme preference from the backend
     const fetchTheme = async () => {
       try {
@@ -32,10 +29,6 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       fetchTheme()
     }
   }, [])
-
-  if (!mounted) {
-    return null
-  }
 
   return (
     <NextThemesProvider 

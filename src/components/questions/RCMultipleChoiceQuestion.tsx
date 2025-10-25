@@ -147,157 +147,159 @@ export function RCMultipleChoiceQuestion({
         </div>
 
         {/* Right Side - Question */}
-        <div className="w-1/2 flex flex-col overflow-y-auto pr-2">
-          <div className="space-y-2.5">
-            {/* Question Header */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <QuestionTypeBadge type={question.question_type} />
-              <DifficultyBadge difficulty={question.difficulty_level} />
-              {progress?.solved && (
-                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Solved
-                </Badge>
-              )}
-              {progress?.attempted && !progress?.solved && (
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
-                  Attempted
-                </Badge>
-              )}
-            </div>
-
-            {/* Instructions */}
-            <p className="text-xs text-muted-foreground">
-              Select all answer choices that apply.
-            </p>
-
-            {/* Question Text */}
-            <div className="py-1.5">
-              <p className="text-sm leading-normal font-medium">{question.question_text}</p>
-            </div>
-
-            {/* Result Message */}
-            {result && (
-              <div
-                className={`border rounded-md p-2.5 ${
-                  result.type === 'success'
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                    : result.type === 'partial'
-                    ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
-                    : 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {result.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  )}
-                  <p
-                    className={`font-medium text-xs ${
-                      result.type === 'success'
-                        ? 'text-green-900 dark:text-green-300'
-                        : result.type === 'partial'
-                        ? 'text-yellow-900 dark:text-yellow-300'
-                        : 'text-red-900 dark:text-red-300'
-                    }`}
-                  >
-                    {result.message}
-                  </p>
-                </div>
+        <div className="w-1/2 flex flex-col">
+          <div className="flex-1 overflow-y-auto pr-2">
+            <div className="space-y-2.5">
+              {/* Question Header */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <QuestionTypeBadge type={question.question_type} />
+                <DifficultyBadge difficulty={question.difficulty_level} />
+                {progress?.solved && (
+                  <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Solved
+                  </Badge>
+                )}
+                {progress?.attempted && !progress?.solved && (
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
+                    Attempted
+                  </Badge>
+                )}
               </div>
-            )}
 
-            {/* Options - Checkbox style for multiple selection */}
-            <div className="space-y-1.5">
-              {shuffledOptions.map(({ option }, shuffledIndex) => {
-                const choice = findChoiceByOption(question.choices, option);
-                const isSelected = selectedOptions.has(shuffledIndex);
-                const isCorrect = choice?.is_correct || false;
+              {/* Instructions */}
+              <p className="text-xs text-muted-foreground">
+                Select all answer choices that apply.
+              </p>
 
-                return (
-                  <div
-                    key={shuffledIndex}
-                    className={`border rounded-md p-2.5 cursor-pointer transition-all ${
-                      !isSubmitted
-                        ? isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:border-primary/50 border-border'
-                        : isSelected
-                        ? isCorrect
-                          ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                          : 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                        : 'border-border'
-                    }`}
-                    onClick={() => handleOptionToggle(shuffledIndex)}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      {/* Checkbox indicator (square for multi-select) */}
-                      <div
-                        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
-                          !isSubmitted
-                            ? isSelected
-                              ? 'border-primary bg-primary'
+              {/* Question Text */}
+              <div className="py-1.5">
+                <p className="text-sm leading-normal font-medium">{question.question_text}</p>
+              </div>
+
+              {/* Result Message */}
+              {result && (
+                <div
+                  className={`border rounded-md p-2.5 ${
+                    result.type === 'success'
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                      : result.type === 'partial'
+                      ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
+                      : 'border-red-500 bg-red-50 dark:bg-red-900/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {result.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    )}
+                    <p
+                      className={`font-medium text-xs ${
+                        result.type === 'success'
+                          ? 'text-green-900 dark:text-green-300'
+                          : result.type === 'partial'
+                          ? 'text-yellow-900 dark:text-yellow-300'
+                          : 'text-red-900 dark:text-red-300'
+                      }`}
+                    >
+                      {result.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Options - Checkbox style for multiple selection */}
+              <div className="space-y-1.5">
+                {shuffledOptions.map(({ option }, shuffledIndex) => {
+                  const choice = findChoiceByOption(question.choices, option);
+                  const isSelected = selectedOptions.has(shuffledIndex);
+                  const isCorrect = choice?.is_correct || false;
+
+                  return (
+                    <div
+                      key={shuffledIndex}
+                      className={`border rounded-md p-2.5 cursor-pointer transition-all ${
+                        !isSubmitted
+                          ? isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:border-primary/50 border-border'
+                          : isSelected
+                          ? isCorrect
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                            : 'border-red-500 bg-red-50 dark:bg-red-900/10'
+                          : 'border-border'
+                      }`}
+                      onClick={() => handleOptionToggle(shuffledIndex)}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        {/* Checkbox indicator (square for multi-select) */}
+                        <div
+                          className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
+                            !isSubmitted
+                              ? isSelected
+                                ? 'border-primary bg-primary'
+                                : 'border-muted-foreground'
+                              : isSelected
+                              ? isCorrect
+                                ? 'border-green-600 bg-green-600'
+                                : 'border-red-600 bg-red-600'
                               : 'border-muted-foreground'
-                            : isSelected
-                            ? isCorrect
-                              ? 'border-green-600 bg-green-600'
-                              : 'border-red-600 bg-red-600'
-                            : 'border-muted-foreground'
-                        }`}
-                      >
-                        {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-sm" />}
-                      </div>
+                          }`}
+                        >
+                          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-sm" />}
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm">{option}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm">{option}</p>
 
-                        {isSubmitted && isSelected && choice && (
-                          <div
-                            className={`mt-1.5 p-2 rounded text-xs ${
-                              isCorrect
-                                ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-300'
-                                : 'bg-red-100 dark:bg-red-900/20 text-red-900 dark:text-red-300'
-                            }`}
-                          >
-                            <p className="font-medium mb-0.5 flex items-center gap-1">
-                              {isCorrect ? (
-                                <>
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  Correct
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="w-3 h-3" />
-                                  Incorrect
-                                </>
-                              )}
-                            </p>
-                            <p className="leading-snug">{choice.reasoning}</p>
-                          </div>
-                        )}
+                          {isSubmitted && isSelected && choice && (
+                            <div
+                              className={`mt-1.5 p-2 rounded text-xs ${
+                                isCorrect
+                                  ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-300'
+                                  : 'bg-red-100 dark:bg-red-900/20 text-red-900 dark:text-red-300'
+                              }`}
+                            >
+                              <p className="font-medium mb-0.5 flex items-center gap-1">
+                                {isCorrect ? (
+                                  <>
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Correct
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle className="w-3 h-3" />
+                                    Incorrect
+                                  </>
+                                )}
+                              </p>
+                              <p className="leading-snug">{choice.reasoning}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Sticky Footer */}
-      <div className="flex-shrink-0 bg-background border-t pt-2.5 mt-2.5">
-        <QuestionFooter
-          onClear={handleReset}
-          onSubmit={handleSubmit}
-          clearDisabled={false}
-          submitDisabled={selectedOptions.size === 0 || isSubmitted}
-          onPrev={onPrev}
-          onNext={onNext}
-          hasPrev={hasPrev}
-          hasNext={hasNext}
-        />
+          {/* Footer */}
+          <div className="mt-2.5">
+            <QuestionFooter
+              onClear={handleReset}
+              onSubmit={handleSubmit}
+              clearDisabled={false}
+              submitDisabled={selectedOptions.size === 0 || isSubmitted}
+              onPrev={onPrev}
+              onNext={onNext}
+              hasPrev={hasPrev}
+              hasNext={hasNext}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

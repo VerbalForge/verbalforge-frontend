@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -11,19 +10,15 @@ import {
 interface PracticeFiltersProps {
   difficultyFilter: string;
   typeFilter: string;
-  showNew: boolean;
   onDifficultyChange: (value: string) => void;
   onTypeChange: (value: string) => void;
-  onShowNewToggle: () => void;
 }
 
 export function PracticeFilters({
   difficultyFilter,
   typeFilter,
-  showNew,
   onDifficultyChange,
   onTypeChange,
-  onShowNewToggle,
 }: PracticeFiltersProps) {
   return (
     <div className="flex flex-wrap gap-4 items-center">
@@ -60,10 +55,6 @@ export function PracticeFilters({
           </SelectContent>
         </Select>
       </div>
-
-      <Button variant={showNew ? 'default' : 'outline'} onClick={onShowNewToggle} size="sm">
-        Show New Only
-      </Button>
     </div>
   );
 }

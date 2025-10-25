@@ -7,3 +7,4 @@ export * from './user';
 export * from './question';
 export * from './passage';
 export * from './discussion';
+export * from './practice';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import GoogleIcon from '@mui/icons-material/Google';
 import { cn } from "@/lib/utils"
@@ -26,13 +26,19 @@ export function LoginForm({
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const { login, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Redirect after successful login
   useEffect(() => {
     if (shouldRedirect && user) {
-      router.push(`/${user.username}/dashboard`);
+      const redirect = searchParams.get('redirect');
+      if (redirect) {
+        router.push(redirect);
+      } else {
+        router.push(`/${user.username}/dashboard`);
+      }
     }
-  }, [shouldRedirect, user, router]);
+  }, [shouldRedirect, user, router, searchParams]);
 
   const [formData, setFormData] = useState({
     identifier: '',
@@ -85,12 +91,12 @@ export function LoginForm({
         </div>
         
         <Field>
-          <FieldLabel htmlFor="identifier">Email</FieldLabel>
+          <FieldLabel htmlFor="identifier">Email or Username</FieldLabel>
           <Input 
             id="identifier" 
             name="identifier"
             type="text" 
-            placeholder="m@example.com" 
+            placeholder="jondoe@example.com" 
             value={formData.identifier}
             onChange={handleInputChange}
             disabled={isLoading}

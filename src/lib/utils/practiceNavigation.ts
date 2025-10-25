@@ -1,5 +1,4 @@
-import { PartialQuestion } from '@/lib/models/question';
-import { PartialPassage } from '@/lib/models/passage';
+import { PracticeItem, isPassageItem } from '@/lib/models/practice';
 
 interface NavigationItem {
   id: string;
@@ -8,24 +7,23 @@ interface NavigationItem {
 }
 
 /**
- * Builds navigation items array for session storage
+ * Builds navigation items array for session storage from unified practice items
  */
-export function buildNavigationItems(
-  passages: PartialPassage[],
-  questions: PartialQuestion[]
-): NavigationItem[] {
-  return [
-    ...passages.map(p => ({ 
-      id: p.id, 
-      type: 'passage' as const,
-      questionIds: p.question_ids || []
-    })),
-    ...questions.map(q => ({ 
-      id: q.id, 
-      type: 'question' as const 
-      // No questionIds for standalone questions - the item itself is the question
-    }))
-  ];
+export function buildNavigationItems(items: PracticeItem[]): NavigationItem[] {
+  return items.map(item => {
+    if (isPassageItem(item)) {
+      return {
+        id: item.id,
+        type: 'passage' as const,
+        questionIds: item.question_ids || []
+      };
+    } else {
+      return {
+        id: item.id,
+        type: 'question' as const
+      };
+    }
+  });
 }
 
 /**

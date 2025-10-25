@@ -66,9 +66,9 @@ export function TextCompletionTripleQuestion({
     const option2 = shuffledBlank2[selectedBlank2].option;
     const option3 = shuffledBlank3[selectedBlank3].option;
     
-    const choice1 = findChoiceByOption(question.choices, option1);
-    const choice2 = findChoiceByOption(question.choices, option2);
-    const choice3 = findChoiceByOption(question.choices, option3);
+    const choice1 = findChoiceByOption(question.choices, option1, 1);
+    const choice2 = findChoiceByOption(question.choices, option2, 2);
+    const choice3 = findChoiceByOption(question.choices, option3, 3);
     
     const isCorrect = (choice1?.is_correct || false) && (choice2?.is_correct || false) && (choice3?.is_correct || false);
     
@@ -86,15 +86,15 @@ export function TextCompletionTripleQuestion({
 
   // Check correctness for each blank
   const blank1Correct = isSubmitted && selectedBlank1 !== null
-    ? findChoiceByOption(question.choices, shuffledBlank1[selectedBlank1].option)?.is_correct || false
+    ? findChoiceByOption(question.choices, shuffledBlank1[selectedBlank1].option, 1)?.is_correct || false
     : false;
   
   const blank2Correct = isSubmitted && selectedBlank2 !== null
-    ? findChoiceByOption(question.choices, shuffledBlank2[selectedBlank2].option)?.is_correct || false
+    ? findChoiceByOption(question.choices, shuffledBlank2[selectedBlank2].option, 2)?.is_correct || false
     : false;
   
   const blank3Correct = isSubmitted && selectedBlank3 !== null
-    ? findChoiceByOption(question.choices, shuffledBlank3[selectedBlank3].option)?.is_correct || false
+    ? findChoiceByOption(question.choices, shuffledBlank3[selectedBlank3].option, 3)?.is_correct || false
     : false;
 
   // Determine result based on correctness
@@ -139,25 +139,25 @@ export function TextCompletionTripleQuestion({
           {/* Row 1 */}
           <OptionButton
             option={shuffledBlank1[0].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank1[0].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank1[0].option, 1) || null}
             isSelected={selectedBlank1 === 0}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank1[0].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank1[0].option, 1)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank1Toggle(0)}
           />
           <OptionButton
             option={shuffledBlank2[0].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank2[0].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank2[0].option, 2) || null}
             isSelected={selectedBlank2 === 0}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank2[0].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank2[0].option, 2)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank2Toggle(0)}
           />
           <OptionButton
             option={shuffledBlank3[0].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank3[0].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank3[0].option, 3) || null}
             isSelected={selectedBlank3 === 0}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank3[0].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank3[0].option, 3)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank3Toggle(0)}
           />
@@ -165,25 +165,25 @@ export function TextCompletionTripleQuestion({
           {/* Row 2 */}
           <OptionButton
             option={shuffledBlank1[1].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank1[1].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank1[1].option, 1) || null}
             isSelected={selectedBlank1 === 1}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank1[1].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank1[1].option, 1)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank1Toggle(1)}
           />
           <OptionButton
             option={shuffledBlank2[1].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank2[1].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank2[1].option, 2) || null}
             isSelected={selectedBlank2 === 1}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank2[1].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank2[1].option, 2)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank2Toggle(1)}
           />
           <OptionButton
             option={shuffledBlank3[1].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank3[1].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank3[1].option, 3) || null}
             isSelected={selectedBlank3 === 1}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank3[1].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank3[1].option, 3)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank3Toggle(1)}
           />
@@ -191,25 +191,25 @@ export function TextCompletionTripleQuestion({
           {/* Row 3 */}
           <OptionButton
             option={shuffledBlank1[2].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank1[2].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank1[2].option, 1) || null}
             isSelected={selectedBlank1 === 2}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank1[2].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank1[2].option, 1)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank1Toggle(2)}
           />
           <OptionButton
             option={shuffledBlank2[2].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank2[2].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank2[2].option, 2) || null}
             isSelected={selectedBlank2 === 2}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank2[2].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank2[2].option, 2)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank2Toggle(2)}
           />
           <OptionButton
             option={shuffledBlank3[2].option}
-            choice={findChoiceByOption(question.choices, shuffledBlank3[2].option) || null}
+            choice={findChoiceByOption(question.choices, shuffledBlank3[2].option, 3) || null}
             isSelected={selectedBlank3 === 2}
-            isCorrect={findChoiceByOption(question.choices, shuffledBlank3[2].option)?.is_correct || false}
+            isCorrect={findChoiceByOption(question.choices, shuffledBlank3[2].option, 3)?.is_correct || false}
             isSubmitted={isSubmitted}
             onClick={() => handleBlank3Toggle(2)}
           />

@@ -1,26 +1,46 @@
+'use client';
+
 import { MessageSquare } from "lucide-react"
 import Link from "next/link"
+import { Logo } from '@/components/Logo';
 import { ThemeToggle } from "@/components/theme-toggle"
-
+import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LoginForm } from "@/components/login-form"
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect')
+  
+  let bannerMessage = ''
+  if (redirect === '/admin') {
+    bannerMessage = 'Please login to access the Admin Portal'
+  } else if (redirect === '/support') {
+    bannerMessage = 'Please login to submit a support ticket'
+  }
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col overflow-y-auto max-h-svh">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-6 md:px-10 md:py-6">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6 md:px-10 py-4">
           <div className="flex justify-center gap-2 md:justify-start">
             <Link href="/" className="flex items-center gap-2 font-medium flex-1">
-              <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-                <MessageSquare className="size-4" />
-              </div>
-              VerbalForge
+              <Logo width={24} height={24} />
+              <span className="text-lg font-bold">
+                <span className="text-foreground">VerbalForge</span>
+              </span>
             </Link>
             <ThemeToggle />
           </div>
         </div>
         <div className="flex flex-1 items-center justify-center p-6 md:p-10">
-          <div className="w-full max-w-xs">
+          <div className="w-full max-w-xs space-y-4">
+            {bannerMessage && (
+              <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                <AlertDescription>{bannerMessage}</AlertDescription>
+              </Alert>
+            )}
             <LoginForm />
           </div>
         </div>
@@ -42,5 +62,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-svh flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

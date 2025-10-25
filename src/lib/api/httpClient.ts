@@ -24,6 +24,13 @@ export class HttpClient {
     try {
       const response = await fetch(url, config);
       
+      // Check for token refresh header
+      const newToken = response.headers.get('X-New-Token');
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        console.log('Token automatically refreshed');
+      }
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || errorData.message;

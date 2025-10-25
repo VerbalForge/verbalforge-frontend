@@ -95,6 +95,16 @@ export default function QuestionDetailPage() {
       try {
         const data = await questionService.getQuestionById(questionId);
         setQuestion(data);
+        
+        // If question has a passage_id and we don't have one in session, use it
+        // This handles cases where user navigates directly to an RC question
+        if (data.passage_id) {
+          if (!storedPassageId) {
+            setCurrentPassageId(data.passage_id);
+            // Also save to session storage for consistency
+            sessionStorage.setItem('currentPassageId', data.passage_id);
+          }
+        }
       } catch (err) {
         console.error('Error fetching question:', err);
         setError('Failed to load question. Please try again.');

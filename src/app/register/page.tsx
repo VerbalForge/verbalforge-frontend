@@ -1,6 +1,7 @@
 import { MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Logo } from '@/components/Logo';
 
 import { SignupForm } from "@/components/signup-form"
 
@@ -8,13 +9,13 @@ export default function RegisterPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col overflow-y-auto max-h-svh">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-6 md:px-10 md:py-6">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6 md:px-10 py-4">
           <div className="flex justify-center gap-2 md:justify-start">
             <Link href="/" className="flex items-center gap-2 font-medium flex-1">
-              <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-                <MessageSquare className="size-4" />
-              </div>
-              VerbalForge
+              <Logo width={24} height={24} />
+              <span className="text-lg font-bold">
+                <span className="text-foreground">VerbalForge</span>
+              </span>
             </Link>
             <ThemeToggle />
           </div>

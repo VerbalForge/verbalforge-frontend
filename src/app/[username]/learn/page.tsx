@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Loader2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Word, WordsResponse, WordFilters } from '@/lib/models/word';
 import { wordService } from '@/lib/services/wordService';
 import { WordCard } from '@/components/learn/WordCard';
@@ -157,14 +157,6 @@ export default function LearnPage() {
     // Optionally reload the data
     fetchWords();
   };
-
-  if (loading && words.length === 0) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">

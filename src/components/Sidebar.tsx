@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Home, User, MessageCircle, Folder, Settings, LogOut } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface SidebarProps {
   userName: string;
@@ -22,6 +23,7 @@ export function Sidebar({
   activeTab = 'overview',
   onTabChange 
 }: SidebarProps) {
+
   const menuItems = [
     { 
       id: 'overview', 
@@ -54,7 +56,8 @@ export function Sidebar({
   return (
     <aside className="w-64 bg-card border-r border-border fixed h-full flex flex-col">
       {/* Logo/Brand */}
-      <div className="p-6">
+      <div className="p-6 flex items-center gap-3">
+        <Logo width={32} height={32} />
         <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
           VerbalForge
         </h1>

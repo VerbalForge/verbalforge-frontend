@@ -40,12 +40,15 @@ export function getCorrectAnswers(choices: Choice[]): string[] {
 
 /**
  * Finds a choice by option text (case-insensitive)
+ * If blankNumber is provided, also filters by blank number to handle duplicate option texts
  */
-export function findChoiceByOption(choices: Choice[], optionText: string): Choice | undefined {
+export function findChoiceByOption(choices: Choice[], optionText: string, blankNumber?: number): Choice | undefined {
   const normalized = optionText.trim().toLowerCase();
-  return choices.find(choice => 
-    choice.option.trim().toLowerCase() === normalized
-  );
+  return choices.find(choice => {
+    const matchesText = choice.option.trim().toLowerCase() === normalized;
+    const matchesBlank = blankNumber === undefined || choice.blank === blankNumber;
+    return matchesText && matchesBlank;
+  });
 }
 
 /**
