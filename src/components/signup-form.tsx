@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import GoogleIcon from '@mui/icons-material/Google'
@@ -25,16 +25,10 @@ import { usePasswordValidation } from "@/hooks/usePasswordValidation"
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [shouldRedirect, setShouldRedirect] = useState(false)
-  const { register: registerUser, user } = useAuth()
+  const { register: registerUser } = useAuth()
   const router = useRouter()
 
-  // Redirect after successful signup
-  useEffect(() => {
-    if (shouldRedirect && user) {
-      router.push(`/${user.username}/dashboard`)
-    }
-  }, [shouldRedirect, user, router])
+  // Direct navigation handled after successful registration
 
   // Use password validation hook
   const {
@@ -112,7 +106,7 @@ export function SignupForm() {
       // Get user's timezone
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      await registerUser({
+      const newUser = await registerUser({
         name: formData.name,
         username: formData.username,
         email: formData.email,
@@ -121,7 +115,8 @@ export function SignupForm() {
         timezone: timezone,
       })
 
-      setShouldRedirect(true)
+      // Navigate immediately to user dashboard
+      router.replace(`/${newUser.username}/dashboard`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed")
     } finally {

@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   sessionExpired: boolean;
   setUser: (user: User | null) => void;
-  login: (identifier: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<User>;
   register: (userData: {
     name: string;
     username: string;
@@ -19,7 +19,7 @@ interface AuthContextType {
     password: string;
     photo?: string;
     timezone?: string;
-  }) => Promise<void>;
+  }) => Promise<User>;
   logout: () => void;
   validateSession: () => Promise<boolean>;
 }
@@ -119,10 +119,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // Only re-create interval if user ID changes (login/logout)
 
-  const login = async (identifier: string, password: string) => {
+  const login = async (identifier: string, password: string): Promise<User> => {
     try {
       const response = await authService.login({ identifier, password });
       setUser(response.user);
+      return response.user;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -136,10 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     phone: string;
     password: string;
     photo?: string;
-  }) => {
+    timezone?: string;
+  }): Promise<User> => {
     try {
       const response = await authService.register(userData);
       setUser(response.user);
+      return response.user;
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
