@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GoogleAuthProvider } from '@/components/providers/GoogleAuthProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,28 +26,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-  const hasValidGoogleClientId = googleClientId && !googleClientId.includes('your-google-client-id');
-  
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {hasValidGoogleClientId ? (
-          <GoogleOAuthProvider clientId={googleClientId}>
-            <ThemeProvider
-              attribute="class"
-              disableTransitionOnChange
-            >
-              <AuthProvider>
-                {children}
-              </AuthProvider>
-              <Toaster position="top-right" richColors/>
-            </ThemeProvider>
-          </GoogleOAuthProvider>
-        ) : (
+        <GoogleAuthProvider>
           <ThemeProvider
             attribute="class"
             disableTransitionOnChange
@@ -57,7 +42,7 @@ export default function RootLayout({
             </AuthProvider>
             <Toaster position="top-right" richColors/>
           </ThemeProvider>
-        )}
+        </GoogleAuthProvider>
       </body>
     </html>
   );
