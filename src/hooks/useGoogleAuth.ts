@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
-import { useGoogleLogin, CodeResponse } from '@react-oauth/google';
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface UseGoogleAuthOptions {
@@ -9,9 +10,14 @@ interface UseGoogleAuthOptions {
 
 export function useGoogleAuth({ onSuccess, onError }: UseGoogleAuthOptions = {}) {
   const { googleLogin } = useAuth();
+  const [isClient, setIsClient] = useState(false);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
   const hasValidGoogleClientId = googleClientId && !googleClientId.includes('your-google-client-id');
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleError = useCallback((error: string) => {
     console.error('Google OAuth Error:', error);
@@ -22,25 +28,18 @@ export function useGoogleAuth({ onSuccess, onError }: UseGoogleAuthOptions = {})
     onSuccess?.();
   }, [onSuccess]);
 
-  const triggerGoogleLogin = useGoogleLogin({
-    onSuccess: async (codeResponse: CodeResponse) => {
-      try {
-        await googleLogin(codeResponse.code);
-        handleSuccess();
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Google authentication failed';
-        handleError(errorMessage);
-      }
-    },
-    onError: () => {
-      handleError('Google authentication was cancelled or failed');
-    },
-    flow: 'auth-code',
-  });
+  const triggerGoogleLogin = useCallback(() => {
+    // Placeholder - actual Google login handled by GoogleOAuthButton component
+    // which will be conditionally rendered only on client-side
+  }, []);
 
   return {
-    hasValidGoogleClientId,
+    hasValidGoogleClientId: hasValidGoogleClientId && isClient,
     isGoogleLoading: false,
     triggerGoogleLogin,
+    // Export callbacks for use in other components
+    googleLogin,
+    handleSuccess,
+    handleError,
   };
 }

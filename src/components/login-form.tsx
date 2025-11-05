@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
-import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+import { GoogleOAuthButtonWrapper } from '@/components/auth/GoogleOAuthButtonWrapper';
 
 export function LoginForm({
   className,
@@ -29,7 +29,7 @@ export function LoginForm({
   const searchParams = useSearchParams();
 
   // Google OAuth integration
-  const { hasValidGoogleClientId, triggerGoogleLogin } = useGoogleAuth({
+  const { hasValidGoogleClientId, googleLogin, handleSuccess, handleError } = useGoogleAuth({
     onSuccess: () => setShouldRedirect(true),
     onError: (error) => setError(error),
   });
@@ -93,13 +93,16 @@ export function LoginForm({
         
         {hasValidGoogleClientId && (
           <>
-            <GoogleAuthButton
+            <GoogleOAuthButtonWrapper
               variant="login"
-              onClick={triggerGoogleLogin}
-              disabled={isLoading}
+              onSuccess={async (code) => {
+                await googleLogin(code);
+                handleSuccess();
+              }}
+              onError={handleError}
             />
             
-            <FieldSeparator>Or continue with</FieldSeparator>
+            <FieldSeparator>or</FieldSeparator>
           </>
         )}
         

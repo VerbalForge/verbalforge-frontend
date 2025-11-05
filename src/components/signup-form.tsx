@@ -21,7 +21,7 @@ import { PasswordRequirements } from "@/components/password/PasswordRequirements
 import { PasswordValidationAlert } from "@/components/password/PasswordValidationAlert"
 import { usePasswordValidation } from "@/hooks/usePasswordValidation"
 import { useGoogleAuth } from "@/hooks/useGoogleAuth"
-import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton"
+import { GoogleOAuthButtonWrapper } from "@/components/auth/GoogleOAuthButtonWrapper"
 
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -31,7 +31,7 @@ export function SignupForm() {
   const [shouldRedirect, setShouldRedirect] = useState(false)
 
   // Google OAuth integration
-  const { hasValidGoogleClientId, triggerGoogleLogin } = useGoogleAuth({
+  const { hasValidGoogleClientId, googleLogin, handleSuccess, handleError } = useGoogleAuth({
     onSuccess: () => setShouldRedirect(true),
     onError: (error) => setError(error),
   });
@@ -156,10 +156,13 @@ export function SignupForm() {
         
         {hasValidGoogleClientId && (
           <>
-            <GoogleAuthButton
+            <GoogleOAuthButtonWrapper
               variant="signup"
-              onClick={triggerGoogleLogin}
-              disabled={isLoading}
+              onSuccess={async (code) => {
+                await googleLogin(code);
+                handleSuccess();
+              }}
+              onError={handleError}
             />
             
             <FieldSeparator>or</FieldSeparator>
