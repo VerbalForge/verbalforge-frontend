@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function LeaderboardSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-muted-foreground mt-2">See how you rank against other learners</h2>
       </div>

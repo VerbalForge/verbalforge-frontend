@@ -34,7 +34,7 @@ export default function LeaderboardPage() {
   const showUserRankingCard = userProfile && !userInLeaderboard && userRank && userRank > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <p className="text-muted-foreground text-lg">See how you rank against other learners!</p>

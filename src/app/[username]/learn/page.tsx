@@ -12,15 +12,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, LayoutGrid, List } from 'lucide-react';
 import { Word, WordsResponse, WordFilters } from '@/lib/models/word';
 import { wordService } from '@/lib/services/wordService';
+import { userWordService } from '@/lib/services/userWordService';
 import { WordCard } from '@/components/learn/WordCard';
 import { WordCardSkeleton } from '@/components/learn/WordCardSkeleton';
 import { WordDialog } from '@/components/learn/WordDialog';
+import { WordCardView } from '@/components/learn/WordCardView';
+import { WordDetailDialog } from '@/components/learn/WordDetailDialog';
 import { useWordRecall } from '@/hooks/useWordRecall';
 import { toast } from 'sonner';
+
 
 interface FilterState {
   sources: string[];
@@ -28,13 +33,20 @@ interface FilterState {
   progress: 'all' | 'known' | 'practice';
 }
 
+type ViewMode = 'flashcard' | 'card';
+
 export default function LearnPage() {
   const [words, setWords] = useState<Word[]>([]);
   const [availableSources, setAvailableSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('flashcard');
   
-  // Use word recall hook at top level
-  const { getWordRecall, setWordRecall, resetProgress } = useWordRecall();
+  // User progress tracking for card view
+  const [userKnownWords, setUserKnownWords] = useState<string[]>([]);
+  const [userPracticeWords, setUserPracticeWords] = useState<string[]>([]);
+  
+  // Use word recall hook for flashcard mode
+  const { getWordRecall, setWordRecall, resetProgress: resetFlashcardProgress, refreshData: refreshFlashcardData } = useWordRecall();
   
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -69,8 +81,14 @@ export default function LearnPage() {
   // Fetch data when filters or page changes
   useEffect(() => {
     fetchWords();
+    // Always load user progress when view changes to ensure sync
+    loadUserProgress();
+    // Refresh flashcard data when switching to flashcard view
+    if (viewMode === 'flashcard') {
+      refreshFlashcardData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchDebounced, filters.sources, filters.progress]);
+  }, [currentPage, searchDebounced, filters.sources, filters.progress, viewMode]);
 
   const fetchWords = async () => {
     try {
@@ -107,6 +125,50 @@ export default function LearnPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadUserProgress = async () => {
+    try {
+      const progress = await userWordService.getUserProgress();
+      if (progress) {
+        setUserKnownWords(progress.known || []);
+        setUserPracticeWords(progress.practice || []);
+      }
+    } catch (error) {
+      console.error('Failed to load user progress:', error);
+    }
+  };
+
+  const handleUpdateStatus = async (wordId: string, status: 'known' | 'practice' | 'reset') => {
+    try {
+      await userWordService.updateWordStatus(wordId, status);
+      
+      // Reload user progress to sync across views
+      await loadUserProgress();
+      
+      // Also refresh flashcard data to keep it in sync
+      await refreshFlashcardData();
+      
+      // Update the selected word's status if dialog is open
+      if (selectedWord && selectedWord.id === wordId) {
+        setSelectedWord({...selectedWord});
+      }
+      
+      toast.success(
+        status === 'reset'
+          ? 'Word status reset'
+          : `Word marked as ${status === 'known' ? 'known' : 'for practice'}`
+      );
+    } catch (error) {
+      toast.error('Failed to update word status');
+      console.error(error);
+    }
+  };
+
+  const getWordStatus = (wordId: string): 'known' | 'practice' | 'unlearned' => {
+    if (userKnownWords.includes(wordId)) return 'known';
+    if (userPracticeWords.includes(wordId)) return 'practice';
+    return 'unlearned';
   };
 
 
@@ -152,10 +214,20 @@ export default function LearnPage() {
   };
 
   const handleResetProgress = async () => {
-    await resetProgress();
-    setIsResetDialogOpen(false);
-    // Optionally reload the data
-    fetchWords();
+    try {
+      if (viewMode === 'flashcard') {
+        await resetFlashcardProgress();
+      } else {
+        await userWordService.resetProgress();
+        await loadUserProgress();
+      }
+      setIsResetDialogOpen(false);
+      toast.success('Progress reset successfully');
+      fetchWords();
+    } catch (error) {
+      toast.error('Failed to reset progress');
+      console.error(error);
+    }
   };
 
   return (
@@ -163,18 +235,32 @@ export default function LearnPage() {
       <div className="flex justify-between items-start">
         <div>
           <p className="text-muted-foreground text-lg">
-            Explore vocabulary with interactive flashcards
+            Explore vocabulary with interactive flashcards and detailed cards
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setIsResetDialogOpen(true)}
-          className="text-destructive hover:text-destructive"
-        >
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Reset Progress
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+            <TabsList>
+              <TabsTrigger value="flashcard">
+                <List className="h-4 w-4" />
+              </TabsTrigger>
+              <TabsTrigger value="card">
+                <LayoutGrid className="h-4 w-4" />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsResetDialogOpen(true)}
+            className="text-destructive hover:text-destructive"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset Progress
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -255,26 +341,47 @@ export default function LearnPage() {
         )}
       </div>
 
-      {/* Word grid - 5x6 = 30 words */}
+      {/* Word grid */}
       {loading ? (
         // Loading - show skeleton cards
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {Array.from({ length: 30 }).map((_, index) => (
+        <div className={viewMode === 'flashcard' 
+          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+          : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        }>
+          {Array.from({ length: viewMode === 'flashcard' ? 30 : 12 }).map((_, index) => (
             <WordCardSkeleton key={index} />
           ))}
         </div>
       ) : words.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {words.map((word) => (
-            <WordCard
-              key={word.id}
-              word={word}
-              onClick={() => handleWordClick(word)}
-              getWordRecall={getWordRecall}
-              setWordRecall={setWordRecall}
-            />
-          ))}
-        </div>
+        <>
+          {viewMode === 'flashcard' ? (
+            // Flashcard View - 5x6 grid
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {words.map((word) => (
+                <WordCard
+                  key={word.id}
+                  word={word}
+                  onClick={() => handleWordClick(word)}
+                  getWordRecall={getWordRecall}
+                  setWordRecall={setWordRecall}
+                />
+              ))}
+            </div>
+          ) : (
+            // Card View - 1x3 grid
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {words.map((word) => (
+                <WordCardView
+                  key={word.id}
+                  word={word}
+                  onClick={() => handleWordClick(word)}
+                  status={getWordStatus(word.id)}
+                  onUpdateStatus={handleUpdateStatus}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
@@ -283,18 +390,34 @@ export default function LearnPage() {
         </div>
       )}
 
-      {/* Word Dialog */}
-      <WordDialog
-        word={selectedWord}
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onPrevious={handlePreviousWord}
-        onNext={handleNextWord}
-        hasPrevious={currentWordIndex > 0}
-        hasNext={currentWordIndex < words.length - 1}
-        getWordRecall={getWordRecall}
-        setWordRecall={setWordRecall}
-      />
+      {/* Word Dialogs - Different for each view mode */}
+      {viewMode === 'flashcard' ? (
+        <WordDialog
+          word={selectedWord}
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onPrevious={handlePreviousWord}
+          onNext={handleNextWord}
+          hasPrevious={currentWordIndex > 0}
+          hasNext={currentWordIndex < words.length - 1}
+          getWordRecall={getWordRecall}
+          setWordRecall={setWordRecall}
+        />
+      ) : (
+        <WordDetailDialog
+          word={selectedWord}
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onPrevious={handlePreviousWord}
+          onNext={handleNextWord}
+          hasPrevious={currentWordIndex > 0}
+          hasNext={currentWordIndex < words.length - 1}
+          currentIndex={currentWordIndex + 1}
+          totalWords={words.length}
+          status={selectedWord ? getWordStatus(selectedWord.id) : 'unlearned'}
+          onUpdateStatus={handleUpdateStatus}
+        />
+      )}
 
       {/* Reset Progress Confirmation Dialog */}
       <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>

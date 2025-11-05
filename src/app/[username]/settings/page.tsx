@@ -330,7 +330,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-3xl font-bold">Account Settings</h1>
         <p className="text-muted-foreground mt-2">
@@ -356,7 +356,7 @@ export default function SettingsPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="flex items-start gap-4">
             <Avatar className="h-20 w-20">
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">

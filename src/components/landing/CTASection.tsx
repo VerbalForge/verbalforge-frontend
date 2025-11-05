@@ -8,7 +8,7 @@ export function CTASection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left side */}
-          <div className="space-y-6 text-white">
+          <div className="space-y-4 text-white">
             <h2 className="text-4xl md:text-5xl font-bold leading-tight">
               Change the way you learn{' '}
               <span className="italic font-serif">vocabulary</span>
@@ -28,7 +28,7 @@ export function CTASection() {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-3xl" />
             <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-12 border border-white/10">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="flex gap-4">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600" />
                   <div className="flex-1">

@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import GoogleIcon from '@mui/icons-material/Google'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -21,12 +20,28 @@ import { PasswordInput } from "@/components/ui/password-input"
 import { PasswordRequirements } from "@/components/password/PasswordRequirements"
 import { PasswordValidationAlert } from "@/components/password/PasswordValidationAlert"
 import { usePasswordValidation } from "@/hooks/usePasswordValidation"
+import { useGoogleAuth } from "@/hooks/useGoogleAuth"
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton"
 
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const { register: registerUser } = useAuth()
+  const { register: registerUser, user } = useAuth()
   const router = useRouter()
+  const [shouldRedirect, setShouldRedirect] = useState(false)
+
+  // Google OAuth integration
+  const { hasValidGoogleClientId, triggerGoogleLogin } = useGoogleAuth({
+    onSuccess: () => setShouldRedirect(true),
+    onError: (error) => setError(error),
+  });
+
+  // Redirect after successful registration
+  useEffect(() => {
+    if (shouldRedirect && user) {
+      router.replace(`/${user.username}/dashboard`)
+    }
+  }, [shouldRedirect, user, router]);
 
   // Direct navigation handled after successful registration
 
@@ -106,7 +121,7 @@ export function SignupForm() {
       // Get user's timezone
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      const newUser = await registerUser({
+      await registerUser({
         name: formData.name,
         username: formData.username,
         email: formData.email,
@@ -116,7 +131,7 @@ export function SignupForm() {
       })
 
       // Navigate immediately to user dashboard
-      router.replace(`/${newUser.username}/dashboard`)
+      setShouldRedirect(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed")
     } finally {
@@ -124,13 +139,8 @@ export function SignupForm() {
     }
   }
 
-  const handleGoogleSignup = async () => {
-    // TODO: Implement Google OAuth signup
-    console.log("Google signup clicked")
-  }
-
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-4">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-bold">Create an account</h1>
@@ -143,6 +153,19 @@ export function SignupForm() {
             {error}
           </div>
         )}
+        
+        {hasValidGoogleClientId && (
+          <>
+            <GoogleAuthButton
+              variant="signup"
+              onClick={triggerGoogleLogin}
+              disabled={isLoading}
+            />
+            
+            <FieldSeparator>or</FieldSeparator>
+          </>
+        )}
+        
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="name">Name</FieldLabel>
@@ -226,17 +249,6 @@ export function SignupForm() {
             {isLoading ? "Creating account..." : "Create Account"}
           </Button>
         </FieldGroup>
-        <FieldSeparator>or</FieldSeparator>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogleSignup}
-          disabled={isLoading}
-        >
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          Sign up with Google
-        </Button>
         <div className="text-center text-sm">
           Already have an account?{" "}
           <Link href="/login" className="underline underline-offset-4">

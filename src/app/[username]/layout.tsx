@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { BarChart3, ClipboardCheck, MessageCircle, Trophy, ChevronDown, LogOut, Settings, BookOpen, HelpCircle } from 'lucide-react';
+import { BarChart3, ClipboardCheck, MessageCircle, Trophy, ChevronDown, LogOut, Settings, BookOpen, HelpCircle, ShieldCheck } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PracticeTimer } from '@/components/PracticeTimer';
 
@@ -83,7 +83,7 @@ export default function UsernameLayout({
       path: `/${username}/dashboard`,
       icon: <BarChart3 className="w-4 h-4" />
     },
-        { 
+    { 
       id: 'learn', 
       name: 'Learn',
       path: `/${username}/learn`,
@@ -121,12 +121,6 @@ export default function UsernameLayout({
     return 'VerbalForge';
   };
 
-  // Check if we're on the Practice page
-  const isPracticePage = pathname === `/${username}/practice` || pathname.startsWith(`/${username}/practice/`);
-  
-  // Check if we're on the Learn page
-  const isLearnPage = pathname === `/${username}/learn` || pathname.startsWith(`/${username}/learn/`);
-
   return (
     <ProtectedRoute>
       <SidebarProvider>
@@ -152,7 +146,7 @@ export default function UsernameLayout({
                           asChild
                           isActive={pathname === item.path || pathname.startsWith(item.path + '/')}
                         >
-                          <Link href={item.path}>
+                          <Link href={item.path} prefetch={true}>
                             {item.icon}
                             <span>{item.name}</span>
                           </Link>
@@ -162,6 +156,27 @@ export default function UsernameLayout({
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
+
+              {user.isAdmin && (
+                <SidebarGroup>
+                  <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={pathname.startsWith('/admin')}
+                        >
+                          <Link href="/admin" prefetch={true}>
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Admin Portal</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              )}
             </SidebarContent>
             
             <SidebarFooter>
@@ -208,7 +223,7 @@ export default function UsernameLayout({
           <main className="flex-1">
             <div className="sticky top-0 z-10 bg-background border-b">
               <div className="flex items-center h-16 px-6 gap-4">
-                {(isPracticePage || isLearnPage) && <SidebarTrigger />}
+                <SidebarTrigger />
                 <div className="flex-1">
                   <h1 className="text-xl font-semibold">
                     {getPageTitle()}

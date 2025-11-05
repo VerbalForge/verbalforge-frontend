@@ -23,6 +23,13 @@ export class AuthService {
     return response;
   }
 
+  async googleLogin(googleToken: string): Promise<AuthResponse> {
+    const response = await httpClient.post<AuthResponse>('/auth/google', { token: googleToken });
+    // Store token in localStorage
+    localStorage.setItem('token', response.token);
+    return response;
+  }
+
   async logout(): Promise<void> {
     localStorage.removeItem('token');
     // Optionally call backend logout endpoint if implemented

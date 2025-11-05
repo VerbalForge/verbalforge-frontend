@@ -104,7 +104,7 @@ export default function EditDiscussionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Button
         variant="ghost"
         onClick={() => router.push(`/${username}/discuss/${discussionId}`)}
@@ -124,7 +124,7 @@ export default function EditDiscussionPage() {
           <CardHeader>
             <CardTitle>Discussion Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input

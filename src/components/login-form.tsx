@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import GoogleIcon from '@mui/icons-material/Google';
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
@@ -16,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 
 export function LoginForm({
   className,
@@ -27,6 +27,12 @@ export function LoginForm({
   const { login, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Google OAuth integration
+  const { hasValidGoogleClientId, triggerGoogleLogin } = useGoogleAuth({
+    onSuccess: () => setShouldRedirect(true),
+    onError: (error) => setError(error),
+  });
 
   // Redirect after successful login
   useEffect(() => {
@@ -75,11 +81,6 @@ export function LoginForm({
     }
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth
-    console.log('Google login clicked');
-  };
-
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props} onSubmit={onSubmit}>
       <FieldGroup>
@@ -89,6 +90,18 @@ export function LoginForm({
             Enter your email below to login to your account
           </p>
         </div>
+        
+        {hasValidGoogleClientId && (
+          <>
+            <GoogleAuthButton
+              variant="login"
+              onClick={triggerGoogleLogin}
+              disabled={isLoading}
+            />
+            
+            <FieldSeparator>Or continue with</FieldSeparator>
+          </>
+        )}
         
         <Field>
           <FieldLabel htmlFor="identifier">Email or Username</FieldLabel>
@@ -135,27 +148,12 @@ export function LoginForm({
           </Button>
         </Field>
         
-        <FieldSeparator>Or continue with</FieldSeparator>
-        
-        <Field>
-          <Button 
-            variant="outline" 
-            type="button"
-            className="w-full"
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-          >
-            <GoogleIcon className="mr-2 h-4 w-4" />
-            Login with Google
-          </Button>
-          
-          <FieldDescription className="text-center">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="underline underline-offset-4">
-              Sign up
-            </Link>
-          </FieldDescription>
-        </Field>
+        <div className="text-center text-sm">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="underline underline-offset-4">
+            Sign up
+          </Link>
+        </div>
       </FieldGroup>
     </form>
   )

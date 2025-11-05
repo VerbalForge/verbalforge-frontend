@@ -16,7 +16,7 @@ export function Stats() {
           </div>
 
           {/* Right side - CTA */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <p className="text-emerald-200 font-semibold">LEARN WITH US</p>
             <h2 className="text-4xl md:text-5xl font-bold leading-tight">
               Master vocab and build the confidence

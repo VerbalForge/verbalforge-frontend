@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-32 w-full" />
         <div className="grid gap-6 md:grid-cols-3">
           <Skeleton className="h-64 w-full" />
@@ -78,7 +78,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Profile Header */}
       <ProfileHeader profile={profile} />
 

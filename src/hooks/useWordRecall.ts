@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { userWordService } from '@/lib/services/userWordService';
 import { toast } from 'sonner';
 
@@ -18,49 +18,59 @@ const STORAGE_KEY = 'word-recall-status';
 export function useWordRecall() {
   const [recallData, setRecallData] = useState<WordRecallData>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const hasLoadedRef = useRef(false);
+
+  // Function to load data from backend
+  const loadData = useCallback(async () => {
+    try {
+      // First load from localStorage for immediate UI response
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setRecallData(JSON.parse(stored));
+      }
+
+      // Then sync with backend
+      const backendData = await userWordService.getUserProgress();
+      if (backendData) {
+        const syncedData: WordRecallData = {};
+        
+        // Map backend data to our format
+        backendData.known.forEach(wordId => {
+          syncedData[wordId] = {
+            status: 'recalled',
+            timestamp: Date.now()
+          };
+        });
+        
+        backendData.practice.forEach(wordId => {
+          syncedData[wordId] = {
+            status: 'not-recalled',
+            timestamp: Date.now()
+          };
+        });
+
+        setRecallData(syncedData);
+        // Also update localStorage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(syncedData));
+      }
+    } catch (error) {
+      console.error('Error loading word recall data:', error);
+      // Continue with localStorage data if backend fails
+    } finally {
+      if (!hasLoadedRef.current) {
+        setIsLoaded(true);
+        hasLoadedRef.current = true;
+      }
+    }
+  }, []); // Empty deps is safe because we use functional setState
 
   // Load and sync data on component mount
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // First load from localStorage for immediate UI response
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setRecallData(JSON.parse(stored));
-        }
-
-        // Then sync with backend
-        const backendData = await userWordService.getUserProgress();
-        if (backendData) {
-          const syncedData: WordRecallData = {};
-          
-          // Map backend data to our format
-          backendData.known.forEach(wordId => {
-            syncedData[wordId] = {
-              status: 'recalled',
-              timestamp: Date.now()
-            };
-          });
-          
-          backendData.practice.forEach(wordId => {
-            syncedData[wordId] = {
-              status: 'not-recalled',
-              timestamp: Date.now()
-            };
-          });
-
-          setRecallData(syncedData);
-        }
-      } catch (error) {
-        console.error('Error loading word recall data:', error);
-        // Continue with localStorage data if backend fails
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
-    loadData();
-  }, []);
+    if (!hasLoadedRef.current) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Save to localStorage whenever data changes
   useEffect(() => {
@@ -149,6 +159,7 @@ export function useWordRecall() {
     clearAllRecalls,
     resetProgress,
     getRecallStats,
+    refreshData: loadData, // Export refresh function
     isLoaded
   };
 }

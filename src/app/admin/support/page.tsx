@@ -1,186 +1,283 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supportService, type SupportTicket, type UpdateSupportTicketRequest } from '@/lib/services/supportService';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Eye } from 'lucide-react';
+import { supportService, SupportTicket } from '@/lib/services/supportService';
+import { DataTable, Column } from '@/components/admin/DataTable';
+import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 export default function AdminSupportPage() {
-  const { user } = useAuth();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      loadTickets();
-    }
-  }, [user]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<SupportTicket | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [ticketToView, setTicketToView] = useState<SupportTicket | null>(null);
 
   const loadTickets = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await supportService.getAllSupportTickets();
-      setTickets(data?.tickets ?? []);
+      const response = await supportService.getAllSupportTickets();
+      setTickets(response.tickets || []);
     } catch (error) {
-      console.error('Failed to load support tickets:', error);
+      console.error('Failed to load tickets:', error);
       toast.error('Failed to load support tickets');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdate = async (id: string, updates: UpdateSupportTicketRequest) => {
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const handleView = (ticket: SupportTicket) => {
+    setTicketToView(ticket);
+    setViewDialogOpen(true);
+  };
+
+  const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      await supportService.updateSupportTicket(id, updates);
-      toast.success('Support ticket updated');
-      // Update local state instead of refetching
-      setTickets(tickets.map(ticket => 
-        ticket.id === id ? { ...ticket, ...updates } : ticket
-      ));
+      await supportService.updateSupportTicket(id, { status: status as SupportTicket['status'] });
+      toast.success('Ticket status updated');
+      loadTickets();
     } catch (error) {
-      console.error('Failed to update support ticket:', error);
-      toast.error('Failed to update support ticket');
+      console.error('Failed to update ticket:', error);
+      toast.error('Failed to update ticket');
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this support ticket?')) return;
-    
+  const handlePriorityUpdate = async (id: string, priority: string) => {
     try {
-      await supportService.deleteSupportTicket(id);
-      toast.success('Support ticket deleted');
-      // Remove from local state instead of refetching
-      setTickets(tickets.filter(ticket => ticket.id !== id));
-      if (expandedId === id) setExpandedId(null);
+      await supportService.updateSupportTicket(id, { priority: priority as SupportTicket['priority'] });
+      toast.success('Ticket priority updated');
+      loadTickets();
     } catch (error) {
-      console.error('Failed to delete support ticket:', error);
-      toast.error('Failed to delete support ticket');
+      console.error('Failed to update priority:', error);
+      toast.error('Failed to update priority');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const handleDelete = (ticket: SupportTicket) => {
+    setTicketToDelete(ticket);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!ticketToDelete) return;
+
+    try {
+      await supportService.deleteSupportTicket(ticketToDelete.id);
+      toast.success('Ticket deleted successfully');
+      loadTickets();
+      setDeleteDialogOpen(false);
+      setTicketToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete ticket:', error);
+      toast.error('Failed to delete ticket');
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+      open: 'destructive',
+      'in-progress': 'default',
+      resolved: 'secondary',
+      closed: 'outline',
+    };
+    return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>;
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+      low: 'outline',
+      medium: 'secondary',
+      high: 'default',
+      urgent: 'destructive',
+    };
+    return <Badge variant={variants[priority] || 'secondary'}>{priority}</Badge>;
+  };
+
+  const columns: Column<SupportTicket>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (ticket) => <span className="text-sm font-medium">{ticket.name}</span>,
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      render: (ticket) => <span className="text-sm">{ticket.email}</span>,
+    },
+    {
+      key: 'subject',
+      header: 'Subject',
+      render: (ticket) => (
+        <div className="max-w-md">
+          <p className="text-sm font-medium truncate">{ticket.subject}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (ticket) => (
+        <Select
+          value={ticket.status}
+          onValueChange={(value) => handleStatusUpdate(ticket.id, value)}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="in-progress">In Progress</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+      render: (ticket) => (
+        <Select
+          value={ticket.priority}
+          onValueChange={(value) => handlePriorityUpdate(ticket.id, value)}
+        >
+          <SelectTrigger className="w-28">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      render: (ticket) => (
+        <span className="text-sm text-muted-foreground">
+          {new Date(ticket.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (ticket) => (
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleView(ticket)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(ticket)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Support Tickets</CardTitle>
-          <CardDescription>
-            Manage user support requests and issues
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!tickets || tickets.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No support tickets yet
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12"></TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tickets.map((ticket) => (
-                  <Fragment key={ticket.id}>
-                    <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedId(expandedId === ticket.id ? null : ticket.id)}>
-                      <TableCell>
-                        {expandedId === ticket.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{ticket.name}</TableCell>
-                      <TableCell>{ticket.email}</TableCell>
-                      <TableCell className="max-w-xs">
-                        <div className="truncate">{ticket.subject}</div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(ticket.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={ticket.status}
-                            onValueChange={(value) => handleUpdate(ticket.id, { status: value as 'open' | 'in-progress' | 'resolved' | 'closed' })}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="open">Open</SelectItem>
-                              <SelectItem value="in-progress">In Progress</SelectItem>
-                              <SelectItem value="resolved">Resolved</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={ticket.priority}
-                            onValueChange={(value) => handleUpdate(ticket.id, { priority: value as 'low' | 'medium' | 'high' | 'urgent' })}
-                          >
-                            <SelectTrigger className="w-28">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="low">Low</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
-                              <SelectItem value="urgent">Urgent</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(ticket.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {expandedId === ticket.id && (
-                      <TableRow key={`${ticket.id}-expanded`}>
-                        <TableCell></TableCell>
-                        <TableCell colSpan={5}>
-                          <div className="py-4 space-y-3">
-                            <div>
-                              <span className="font-semibold">Subject:</span>
-                              <p className="mt-1 text-muted-foreground">{ticket.subject}</p>
-                            </div>
-                            <div>
-                              <span className="font-semibold">Message:</span>
-                              <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{ticket.message}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                ))}
-              </TableBody>
-            </Table>
+      <DataTable
+        data={tickets}
+        columns={columns}
+        loading={loading}
+        emptyMessage="No support tickets found"
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        itemName="this support ticket"
+        description="This will permanently delete this support ticket."
+      />
+
+      {/* View Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Support Ticket Details</DialogTitle>
+            <DialogDescription>
+              Full ticket information and message
+            </DialogDescription>
+          </DialogHeader>
+          {ticketToView && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Name</p>
+                  <p className="text-sm">{ticketToView.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Email</p>
+                  <p className="text-sm">{ticketToView.email}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Subject</p>
+                <p className="text-sm font-medium mt-1">{ticketToView.subject}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Message</p>
+                <p className="text-sm mt-1 whitespace-pre-wrap">{ticketToView.message}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <div className="mt-1">{getStatusBadge(ticketToView.status)}</div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Priority</p>
+                  <div className="mt-1">{getPriorityBadge(ticketToView.priority)}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Created</p>
+                  <p className="text-sm">{new Date(ticketToView.createdAt).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
+                  <p className="text-sm">{new Date(ticketToView.updatedAt).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

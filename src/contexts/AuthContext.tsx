@@ -11,6 +11,7 @@ interface AuthContextType {
   sessionExpired: boolean;
   setUser: (user: User | null) => void;
   login: (identifier: string, password: string) => Promise<User>;
+  googleLogin: (googleToken: string) => Promise<User>;
   register: (userData: {
     name: string;
     username: string;
@@ -149,6 +150,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const googleLogin = async (googleToken: string): Promise<User> => {
+    try {
+      const response = await authService.googleLogin(googleToken);
+      setUser(response.user);
+      return response.user;
+    } catch (error) {
+      console.error('Google login failed:', error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     // Set flag to indicate intentional logout before clearing
     sessionStorage.setItem('intentionalLogout', 'true');
@@ -172,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, sessionExpired, setUser, login, register, logout, validateSession }}>
+    <AuthContext.Provider value={{ user, loading, sessionExpired, setUser, login, googleLogin, register, logout, validateSession }}>
       {children}
       <SessionExpiredDialog isOpen={sessionExpired} onClose={handleSessionDialogClose} />
     </AuthContext.Provider>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -26,10 +26,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { LayoutDashboard, MessageCircle, HelpCircle, MessageSquare, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  MessageCircle, 
+  HelpCircle, 
+  MessageSquare, 
+  ChevronDown, 
+  LogOut, 
+  Settings,
+  FileQuestion,
+  FileText,
+  Users,
+  BookOpen,
+  User,
+  Plus,
+} from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+
+// Create a context for the add button action
+import { createContext, useContext } from 'react';
+
+const AddButtonContext = createContext<{
+  onAddClick: (() => void) | null;
+  setOnAddClick: (callback: (() => void) | null) => void;
+}>({
+  onAddClick: null,
+  setOnAddClick: () => {},
+});
+
+export const useAddButton = () => useContext(AddButtonContext);
 
 export default function AdminLayout({
   children,
@@ -39,6 +67,7 @@ export default function AdminLayout({
   const { user, logout, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [onAddClick, setOnAddClick] = useState<(() => void) | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -49,6 +78,10 @@ export default function AdminLayout({
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login?redirect=/admin');
+    }
+    // Redirect non-admin users to their dashboard
+    if (!loading && user && !user.isAdmin) {
+      router.push(`/${user.username}/dashboard`);
     }
   }, [loading, user, router]);
 
@@ -61,8 +94,8 @@ export default function AdminLayout({
     );
   }
 
-  // Don't render anything if redirecting
-  if (!user) {
+  // Don't render anything if redirecting (not authenticated or not admin)
+  if (!user || !user.isAdmin) {
     return null;
   }
 
@@ -71,38 +104,101 @@ export default function AdminLayout({
       id: 'overview', 
       name: 'Overview',
       path: '/admin',
-      icon: <LayoutDashboard className="w-4 h-4" />
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      group: null // Outside all groups
+    },
+    // Content Management
+    { 
+      id: 'questions', 
+      name: 'Questions',
+      path: '/admin/questions',
+      icon: <FileQuestion className="w-4 h-4" />,
+      group: 'content'
+    },
+    { 
+      id: 'passages', 
+      name: 'Passages',
+      path: '/admin/passages',
+      icon: <FileText className="w-4 h-4" />,
+      group: 'content'
+    },
+    { 
+      id: 'words', 
+      name: 'Words',
+      path: '/admin/words',
+      icon: <BookOpen className="w-4 h-4" />,
+      group: 'content'
+    },
+    // Community & Interaction
+    { 
+      id: 'discussions', 
+      name: 'Discussions',
+      path: '/admin/discussions',
+      icon: <MessageSquare className="w-4 h-4" />,
+      group: 'community'
     },
     { 
       id: 'faqs', 
       name: 'FAQs',
       path: '/admin/faqs',
-      icon: <HelpCircle className="w-4 h-4" />
-    },
-    { 
-      id: 'support', 
-      name: 'Support Tickets',
-      path: '/admin/support',
-      icon: <MessageCircle className="w-4 h-4" />
+      icon: <HelpCircle className="w-4 h-4" />,
+      group: 'community'
     },
     { 
       id: 'feedback', 
       name: 'Feedback',
       path: '/admin/feedback',
-      icon: <MessageSquare className="w-4 h-4" />
+      icon: <MessageSquare className="w-4 h-4" />,
+      group: 'community'
+    },
+    // User & Support
+    { 
+      id: 'users', 
+      name: 'User Analytics',
+      path: '/admin/users',
+      icon: <Users className="w-4 h-4" />,
+      group: 'support'
+    },
+    { 
+      id: 'support', 
+      name: 'Support Tickets',
+      path: '/admin/support',
+      icon: <MessageCircle className="w-4 h-4" />,
+      group: 'support'
     },
   ];
 
   // Determine page title
   const getPageTitle = () => {
+    // Check for exact match first
     const currentItem = menuItems.find(item => pathname === item.path);
     if (currentItem) return currentItem.name;
+    
+    // Check for dynamic routes
+    if (pathname.startsWith('/admin/passages/')) return 'Edit Passage';
+    if (pathname.startsWith('/admin/questions/')) return 'Edit Question';
+    if (pathname.startsWith('/admin/discussions/')) return 'Discussion Details';
+    if (pathname.startsWith('/admin/users/')) return 'User Details';
+    if (pathname.startsWith('/admin/words/')) return 'Edit Word';
+    if (pathname.startsWith('/admin/faqs/')) return 'Edit FAQ';
+    if (pathname.startsWith('/admin/support/')) return 'Support Ticket Details';
+    if (pathname.startsWith('/admin/feedback/')) return 'Feedback Details';
+    
     return 'Admin Portal';
+  };
+
+  // Determine if add button should be shown
+  const showAddButton = () => {
+    return pathname === '/admin/words' || 
+           pathname === '/admin/questions' || 
+           pathname === '/admin/passages' ||
+           pathname === '/admin/faqs';
   };
 
   return (
     <ProtectedRoute>
-      <SidebarProvider>
+      <AddButtonContext.Provider value={{ onAddClick, setOnAddClick }}>
+        <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <Sidebar>
             <SidebarHeader>
@@ -112,42 +208,116 @@ export default function AdminLayout({
                   <h1 className="text-xl font-bold">
                     VerbalForge
                   </h1>
-                  <p className="text-xs text-muted-foreground">Admin Portal</p>
                 </div>
               </div>
             </SidebarHeader>
             
-            <SidebarContent>
-              <SidebarGroup>
-                <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarContent className="gap-1">
+              {/* Overview - Outside all groups */}
+              <SidebarGroup className="p-2 py-0">
                 <SidebarGroupContent>
-                  <SidebarMenu>
-                    {menuItems.map((item) => (
-                      <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={pathname === item.path}
-                        >
-                          <Link href={item.path}>
-                            {item.icon}
-                            <span>{item.name}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
+                  <SidebarMenu className='gap-0'>
+                    {menuItems
+                      .filter(item => item.group === null)
+                      .map((item) => (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={pathname === item.path}
+                          >
+                            <Link href={item.path}>
+                              {item.icon}
+                              <span>{item.name}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
 
-              <SidebarGroup>
-                <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+              {/* Content Management */}
+              <SidebarGroup className="p-2 py-0">
+                <SidebarGroupLabel>Content Management</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu className='gap-0'>
+                    {menuItems
+                      .filter(item => item.group === 'content')
+                      .map((item) => (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={pathname === item.path}
+                          >
+                            <Link href={item.path}>
+                              {item.icon}
+                              <span>{item.name}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              {/* Community & Interaction */}
+              <SidebarGroup className="p-2 py-0">
+                <SidebarGroupLabel>Community & Interaction</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu className='gap-0'>
+                    {menuItems
+                      .filter(item => item.group === 'community')
+                      .map((item) => (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={pathname === item.path}
+                          >
+                            <Link href={item.path}>
+                              {item.icon}
+                              <span>{item.name}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              {/* User & Support */}
+              <SidebarGroup className="p-2 py-1">
+                <SidebarGroupLabel>User & Support</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {menuItems
+                      .filter(item => item.group === 'support')
+                      .map((item) => (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={pathname === item.path}
+                          >
+                            <Link href={item.path}>
+                              {item.icon}
+                              <span>{item.name}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              {/* User Portal */}
+              <SidebarGroup className="p-2 py-1">
+                <SidebarGroupLabel>User Portal</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link href={`/${user.username}/dashboard`}>
-                          <LayoutDashboard className="w-4 h-4" />
-                          <span>My Dashboard</span>
+                        <Link href={`/${user.username}/dashboard`} prefetch={true}>
+                          <User className="w-4 h-4" />
+                          <span>Back to Dashboard</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -196,10 +366,17 @@ export default function AdminLayout({
               <div className="flex items-center h-16 px-6 gap-4">
                 <SidebarTrigger />
                 <div className="flex-1">
-                  <h1 className="text-xl font-semibold">
-                    {getPageTitle()}
-                  </h1>
+                  {getPageTitle() && (
+                    <h1 className="text-xl font-semibold">
+                      {getPageTitle()}
+                    </h1>
+                  )}
                 </div>
+                {showAddButton() && onAddClick && (
+                  <Button onClick={onAddClick} size="icon">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
                 <ThemeToggle />
               </div>
             </div>
@@ -210,6 +387,7 @@ export default function AdminLayout({
           </main>
         </div>
       </SidebarProvider>
+      </AddButtonContext.Provider>
     </ProtectedRoute>
   );
 }

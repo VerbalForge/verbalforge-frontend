@@ -59,7 +59,7 @@ export function DiscussionForm({
             {mode === 'create' ? 'Discussion Details' : 'Edit Discussion'}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
             <Input

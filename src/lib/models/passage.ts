@@ -1,7 +1,7 @@
 export interface PassageMetadata {
   created_at: string;
   updated_at: string;
-  published_at: string;
+  published_at: string | null;
   batch_id: string;
 }
 

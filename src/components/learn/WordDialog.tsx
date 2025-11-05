@@ -129,7 +129,7 @@ export function WordDialog({
         </DialogHeader>
 
         {/* Main Content - Clean and Minimal */}
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-4">
           {/* Definitions */}
           <div className="space-y-4">
             {word.meanings && word.meanings.map((meaning, index) => (
@@ -142,7 +142,7 @@ export function WordDialog({
                     <p className="text-base leading-relaxed">{meaning.definition}</p>
                     
                     {/* Examples - Subtle */}
-                    {meaning.examples && meaning.examples.length > 0 && (
+                    {meaning.examples && Array.isArray(meaning.examples) && meaning.examples.length > 0 && (
                       <div className="space-y-1 pl-4 border-l-2 border-muted">
                         {meaning.examples.map((example, exIndex) => (
                           <p key={exIndex} className="text-sm italic text-muted-foreground leading-relaxed">
@@ -166,7 +166,7 @@ export function WordDialog({
                     Similar
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {word.synonyms.map((synonym) => (
+                    {word.synonyms.filter(s => s && s.trim()).map((synonym) => (
                       <Badge 
                         key={synonym} 
                         variant="secondary" 
@@ -185,7 +185,7 @@ export function WordDialog({
                     Opposite
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {word.antonyms.map((antonym) => (
+                    {word.antonyms.filter(a => a && a.trim()).map((antonym) => (
                       <Badge 
                         key={antonym} 
                         variant="secondary"

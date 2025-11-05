@@ -19,6 +19,7 @@ export interface User {
   email: string;
   phone: string;
   bio?: string;
+  isAdmin: boolean;
   preferences: UserPreferences;
   totalXP: number;
   totalSolved: number;

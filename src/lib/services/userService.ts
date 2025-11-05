@@ -35,8 +35,18 @@ export class UserService {
     return httpClient.get<RecentActivityItem[]>(`/profile/${username}/activity?limit=${limit}`);
   }
 
-  async getUserActivities(username: string, limit: number = 10): Promise<UserActivity[]> {
-    return httpClient.get<UserActivity[]>(`/profile/${username}/activity?limit=${limit}`);
+  async getUserActivities(usernameOrId: string, limit: number = 10): Promise<UserActivity[]> {
+    // Check if it looks like a UUID (for admin panel userId)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(usernameOrId);
+    
+    if (isUUID) {
+      // Use admin endpoint for userId - returns wrapped response
+      const response = await httpClient.get<{ activities: UserActivity[] }>(`/admin/users/${usernameOrId}/activity?limit=${limit}`);
+      return response.activities || [];
+    } else {
+      // Use profile endpoint for username
+      return httpClient.get<UserActivity[]>(`/profile/${usernameOrId}/activity?limit=${limit}`);
+    }
   }
 
   async getActivityCalendar(username: string, days: number = 365): Promise<ActivityCalendarResponse[]> {

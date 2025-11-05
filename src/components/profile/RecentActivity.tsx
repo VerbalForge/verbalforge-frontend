@@ -9,7 +9,9 @@ import {
   SquarePlus, 
   MessageCircle, 
   MessageCircleHeart, 
-  ExternalLink 
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { DifficultyBadge } from '@/components/DifficultyBadge';
 import { QuestionTypeBadge } from '@/components/QuestionTypeBadge';
@@ -20,7 +22,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface RecentActivityProps {
-  username: string;
+  username?: string;
+  userId?: string; // For admin panel
+  limit?: number; // Default 10 for profile, can be higher for admin
+  title?: string; // Custom title
+  enablePagination?: boolean; // Enable pagination (for admin)
+  itemsPerPage?: number; // Items per page when pagination is enabled
 }
 
 function getActivityIcon(activity: UserActivity) {
@@ -86,14 +93,29 @@ function getActivityText(activity: UserActivity): string {
   }
 }
 
-export function RecentActivity({ username }: RecentActivityProps) {
+export function RecentActivity({ 
+  username, 
+  userId, 
+  limit = 10, 
+  title = "Recent Activity",
+  enablePagination = false,
+  itemsPerPage = 20
+}: RecentActivityProps) {
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchActivities = async () => {
       try {
-        const activities = await userService.getUserActivities(username, 10);
+        // If userId is provided (admin panel), use it; otherwise use username (profile page)
+        const identifier = userId || username;
+        if (!identifier) {
+          console.error('No username or userId provided to RecentActivity');
+          return;
+        }
+        
+        const activities = await userService.getUserActivities(identifier, limit);
         setActivities(activities || []);
       } catch (error) {
         console.error('Failed to fetch activities:', error);
@@ -103,7 +125,19 @@ export function RecentActivity({ username }: RecentActivityProps) {
     };
 
     fetchActivities();
-  }, [username]);
+  }, [username, userId, limit]);
+
+  // Pagination logic
+  const totalPages = enablePagination ? Math.ceil(activities.length / itemsPerPage) : 1;
+  const startIndex = enablePagination ? (currentPage - 1) * itemsPerPage : 0;
+  const endIndex = enablePagination ? startIndex + itemsPerPage : activities.length;
+  const paginatedActivities = activities.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of the card
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleQuestionClick = (questionId: string, passageId?: string) => {
     if (passageId) {
@@ -134,7 +168,7 @@ export function RecentActivity({ username }: RecentActivityProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground text-center py-8">
@@ -149,7 +183,7 @@ export function RecentActivity({ username }: RecentActivityProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground text-center py-8">
@@ -163,11 +197,20 @@ export function RecentActivity({ username }: RecentActivityProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>{title}</CardTitle>
+          {enablePagination && totalPages > 1 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => {            
+          {paginatedActivities.map((activity) => {            
             const timeAgo = getTimeAgo(activity.timestamp);
             const description = getActivityDescription(activity);
             const text = getActivityText(activity);
@@ -242,6 +285,71 @@ export function RecentActivity({ username }: RecentActivityProps) {
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {enablePagination && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1}-{Math.min(endIndex, activities.length)} of {activities.length} activities
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage = 
+                    page === 1 || 
+                    page === totalPages || 
+                    (page >= currentPage - 1 && page <= currentPage + 1);
+                  
+                  const showEllipsis = 
+                    (page === 2 && currentPage > 3) ||
+                    (page === totalPages - 1 && currentPage < totalPages - 2);
+
+                  if (showEllipsis) {
+                    return <span key={page} className="px-2">...</span>;
+                  }
+
+                  if (!showPage) {
+                    return null;
+                  }
+
+                  return (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

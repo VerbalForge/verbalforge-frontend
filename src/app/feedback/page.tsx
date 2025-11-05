@@ -138,7 +138,7 @@ export default function Feedback() {
 
         {/* Feedback Form */}
         <div className="bg-card rounded-3xl border-2 p-8 shadow-xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
                 Your Email (optional)

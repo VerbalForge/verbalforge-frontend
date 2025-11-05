@@ -99,10 +99,14 @@ export function MultiSelect({
                   className="text-xs h-5 px-1"
                 >
                   {item}
-                  <button
-                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer inline-flex"
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        e.stopPropagation()
                         handleRemoveTag(item)
                       }
                     }}
@@ -110,10 +114,14 @@ export function MultiSelect({
                       e.preventDefault()
                       e.stopPropagation()
                     }}
-                    onClick={() => handleRemoveTag(item)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleRemoveTag(item)
+                    }}
                   >
                     <X className="h-2 w-2 text-muted-foreground hover:text-foreground" />
-                  </button>
+                  </span>
                 </Badge>
               ))
             ) : (

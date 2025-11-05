@@ -121,7 +121,7 @@ export default function NewDiscussionPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <p className="text-muted-foreground mt-2 text-lg">
           Start a conversation with the community
@@ -133,7 +133,7 @@ export default function NewDiscussionPage() {
           <CardHeader>
             <CardTitle>Discussion Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input

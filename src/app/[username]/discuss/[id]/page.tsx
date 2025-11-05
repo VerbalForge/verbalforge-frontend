@@ -204,7 +204,7 @@ export default function DiscussionPage() {
   const hasLiked = discussion.likedBy.includes(user?.id || '');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
